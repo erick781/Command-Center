@@ -1,5 +1,4 @@
 "use client";
-import { mdToHtml, buildPrintableHtml } from '@/lib/render-deliverable';
 
 import { Nav } from "@/components/nav";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +120,79 @@ function getClientMeta(client: Client | null): ClientMetaData {
   return (client?.meta_data ?? {}) as ClientMetaData;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
+function renderMarkdown(text: string): string {
+  const lines = text.split('\n');
+  const htmlParts: string[] = [];
+  let inUl = false;
+  let inOl = false;
+
+  function closeList() {
+    if (inUl) { htmlParts.push('</ul>'); inUl = false; }
+    if (inOl) { htmlParts.push('</ol>'); inOl = false; }
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    if (!line.trim()) { closeList(); continue; }
+
+    if (/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())) {
+      closeList();
+      htmlParts.push('<hr/>');
+      continue;
+    }
+
+    const h1Match = line.match(/^#\s+(.+)/);
+    if (h1Match) { closeList(); htmlParts.push('<h1>' + inlineMd(h1Match[1]) + '</h1>'); continue; }
+    const h2Match = line.match(/^##\s+(.+)/);
+    if (h2Match) { closeList(); htmlParts.push('<h2>' + inlineMd(h2Match[1]) + '</h2>'); continue; }
+    const h3Match = line.match(/^###\s+(.+)/);
+    if (h3Match) { closeList(); htmlParts.push('<h3>' + inlineMd(h3Match[1]) + '</h3>'); continue; }
+    const h4Match = line.match(/^####\s+(.+)/);
+    if (h4Match) { closeList(); htmlParts.push('<h4>' + inlineMd(h4Match[1]) + '</h4>'); continue; }
+
+    const ulMatch = line.match(/^[\-\*]\s+(.+)/);
+    if (ulMatch) {
+      if (inOl) { htmlParts.push('</ol>'); inOl = false; }
+      if (!inUl) { htmlParts.push('<ul>'); inUl = true; }
+      htmlParts.push('<li>' + inlineMd(ulMatch[1]) + '</li>');
+      continue;
+    }
+
+    const olMatch = line.match(/^(\d+)\.\s+(.+)/);
+    if (olMatch) {
+      if (inUl) { htmlParts.push('</ul>'); inUl = false; }
+      if (!inOl) { htmlParts.push('<ol>'); inOl = true; }
+      htmlParts.push('<li>' + inlineMd(olMatch[2]) + '</li>');
+      continue;
+    }
+
+    closeList();
+    htmlParts.push('<p>' + inlineMd(line) + '</p>');
+  }
+
+  closeList();
+  return htmlParts.join('\n');
+}
+
+function inlineMd(text: string): string {
+  let result = escapeHtml(text);
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+  result = result.replace(/_([^_]+?)_/g, '<em>$1</em>');
+  return result;
+}
+
 function defaultCampaigns(client: Client): Campaign[] {
   const meta = getClientMeta(client);
   const rawCampaigns = meta.campaigns ?? meta.campaign_names;
@@ -175,11 +247,6 @@ function defaultCampaigns(client: Client): Campaign[] {
     name: `Campaign ${index + 1}`,
     status: index === 0 ? "active" : "paused",
   }));
-}
-
-
-function escapeHtml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function buildClientSummary(client: Client | null) {
@@ -246,7 +313,7 @@ function buildReportHtml(report: ReportRecord) {
     ? report.selectedCampaigns.map((name) => `<li>${escapeHtml(name)}</li>`).join("")
     : "<li>All campaigns</li>";
 
-  const paragraphs = mdToHtml(report.content);
+  const paragraphs = renderMarkdown(report.content);
 
   return `<!doctype html>
 <html lang="fr">
@@ -374,7 +441,7 @@ export default function RapportsPage() {
 
     const loadClients = async () => {
       try {
-        const response = await fetch(`${API}/api/client-hub/clients?show_hidden=true`, { credentials: "include" });
+        const response = await fetch(`${API}/api/client-hub/clients?show_hidden=true`);
         const data = await response.json();
         if (!mounted) return;
         setClients(Array.isArray(data) ? data : []);
@@ -461,7 +528,6 @@ export default function RapportsPage() {
 
       const response = await fetch("/api/recommendations", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           client: selectedClient.name,
@@ -914,7 +980,7 @@ export default function RapportsPage() {
                       </div>
                       <div
                         className="mt-3 text-sm leading-7 text-white/70 [&>h1]:text-2xl [&>h1]:font-extrabold [&>h1]:text-[#E8912D] [&>h1]:mt-6 [&>h1]:mb-3 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[#E8912D] [&>h2]:mt-5 [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-white/90 [&>h3]:mt-4 [&>h3]:mb-2 [&>h4]:text-sm [&>h4]:font-bold [&>h4]:text-white/80 [&>h4]:mt-3 [&>h4]:mb-1 [&>h4]:uppercase [&>h4]:tracking-wider [&_strong]:text-white/95 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:my-2 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:my-2 [&_li]:mb-1 [&>hr]:border-white/10 [&>hr]:my-5"
-                        dangerouslySetInnerHTML={{ __html: mdToHtml(reportText) }}
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(reportText) }}
                       />
                     </div>
                   </div>

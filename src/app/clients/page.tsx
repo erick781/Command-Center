@@ -363,6 +363,13 @@ export default function ClientsPage() {
                 }
                 className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
               >
+              <Button
+                size="sm"
+                onClick={() => window.open(`/workspace/${selectedClient.id}`, "_self")}
+                className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
+              >
+                Workspace
+              </Button>
                 Generer rapport
               </Button>
               <Button

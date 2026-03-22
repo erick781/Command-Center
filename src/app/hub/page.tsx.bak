@@ -440,7 +440,7 @@ export default function HubPage() {
   async function loadHubClients() {
     const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
     try {
-      const res = await fetch(`${apiBase}/api/client-hub/clients`, { credentials: "include" });
+      const res = await fetch(`${apiBase}/api/client-hub/clients`);
       if (!res.ok) return;
       const data = await res.json();
       const clients = Array.isArray(data?.clients) ? data.clients : Array.isArray(data) ? data : [];
@@ -486,8 +486,8 @@ export default function HubPage() {
   async function hydrateHubData() {
     try {
       const [clientsResponse, statusResponse] = await Promise.all([
-        fetch("/api/reports/clients", { credentials: "include" }),
-        fetch("/api/status", { credentials: "include" }),
+        fetch("/api/reports/clients"),
+        fetch("/api/status"),
       ]);
 
       if (clientsResponse.ok) {
@@ -670,7 +670,7 @@ export default function HubPage() {
   function beginRefreshPolling() {
     const interval = window.setInterval(async () => {
       try {
-        const response = await fetch("/api/status", { credentials: "include" });
+        const response = await fetch("/api/status");
         if (!response.ok) return;
 
         const data = await response.json();
@@ -717,7 +717,7 @@ export default function HubPage() {
     });
 
     try {
-      const response = await fetch("/api/refresh", { method: "POST", credentials: "include" });
+      const response = await fetch("/api/refresh", { method: "POST" });
       const data = await response.json().catch(() => null);
 
       if (!response.ok && response.status !== 429) {
@@ -770,7 +770,6 @@ export default function HubPage() {
     try {
       const response = await fetch("/api/brainstorm", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: nextMessage,

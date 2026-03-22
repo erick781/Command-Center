@@ -1,0 +1,602 @@
+"use client";
+
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+
+/* ───────── constants ───────── */
+const ORANGE = "#E8912D";
+const BG = "#0f0f12";
+const CARD = "#1a1a1f";
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+
+type Tab = "overview" | "deliverables" | "context";
+
+type DeliverableType = {
+  key: string;
+  label: string;
+  desc: string;
+  icon: string;
+  inputs: { key: string; label: string; placeholder: string }[];
+};
+
+const DELIVERABLE_TYPES: DeliverableType[] = [
+  { key: "strategie_360", label: "Stratégie 360", desc: "Stratégie complète 6 phases", icon: "🎯",
+    inputs: [{ key: "strategy_type", label: "Type de stratégie", placeholder: "Ex: Lancement, Scale, Pivot..." }] },
+  { key: "rapport_leadgen", label: "Rapport Lead Gen", desc: "Analyse performance lead generation", icon: "📊",
+    inputs: [{ key: "context", label: "Contexte additionnel", placeholder: "Données ou observations spécifiques..." }] },
+  { key: "rapport_ecommerce", label: "Rapport E-commerce", desc: "Analyse performance e-commerce", icon: "🛒",
+    inputs: [{ key: "context", label: "Contexte additionnel", placeholder: "Données ou observations spécifiques..." }] },
+  { key: "rapport_coaching", label: "Rapport Coaching", desc: "Analyse performance coaching", icon: "🎓",
+    inputs: [{ key: "context", label: "Contexte additionnel", placeholder: "Données ou observations spécifiques..." }] },
+  { key: "diagnostic", label: "Diagnostic Rapide", desc: "Analyse rapide d'un problème spécifique", icon: "🔍",
+    inputs: [{ key: "problem", label: "Problème à diagnostiquer", placeholder: "Décrivez le problème en détail..." }] },
+  { key: "brief_creatif", label: "Brief Créatif", desc: "Brief pour créatifs et copies", icon: "🎨",
+    inputs: [{ key: "objective", label: "Objectif du brief", placeholder: "Ex: Nouvelle campagne Meta, Landing page..." }] },
+  { key: "resume_client", label: "Résumé Client", desc: "Résumé exécutif du client", icon: "📋",
+    inputs: [] },
+];
+
+type ClientMeta = { spend?: number; cpl?: number; roas?: number; leads?: number; campaigns?: unknown[]; flags?: string[]; wins?: string[] };
+type Client = {
+  id: string; name: string; status: string; health_score: string;
+  retainer_monthly: number; monthly_budget?: number; industry?: string; website?: string;
+  meta_data?: ClientMeta; asana_project_id?: string; slack_channel_id?: string;
+  google_drive_folder_id?: string; notes?: string;
+};
+type Deliverable = {
+  id: string; client_id: string; type: string; title: string;
+  content: { text?: string; markdown?: string; raw?: string };
+  created_at: string; created_by?: string; metadata?: Record<string, unknown>;
+};
+
+/* ───────── helpers ───────── */
+function money(v?: number | null) {
+  if (typeof v !== "number" || Number.isNaN(v)) return "—";
+  return `$${Math.round(v).toLocaleString("fr-CA")}`;
+}
+function shortDate(v?: string) {
+  if (!v) return "";
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? v.slice(0, 10) : d.toLocaleDateString("fr-CA", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function renderMarkdown(md: string): string {
+  let html = md
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:16px;font-weight:700;margin:18px 0 8px;color:#fff">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:18px;font-weight:700;margin:22px 0 10px;color:#fff">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 style="font-size:22px;font-weight:800;margin:26px 0 12px;color:#fff">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;font-weight:600">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li style="margin-left:16px;padding-left:4px;margin-bottom:4px">$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li style="margin-left:16px;padding-left:4px;margin-bottom:4px">$2</li>')
+    .replace(/\n{2,}/g, '<br/><br/>')
+    .replace(/\n/g, '<br/>');
+  return html;
+}
+
+/* ───────── Supabase REST helpers ───────── */
+async function supaRest(path: string, options?: RequestInit) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPA_KEY,
+      Authorization: `Bearer ${SUPA_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: options?.method === "POST" ? "return=representation" : "return=minimal",
+      ...(options?.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Supabase ${res.status}: ${txt}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function fetchDeliverables(clientId: string): Promise<Deliverable[]> {
+  return supaRest(`client_deliverables?client_id=eq.${clientId}&order=created_at.desc&limit=50`);
+}
+
+async function saveDeliverable(d: Omit<Deliverable, "id" | "created_at">) {
+  return supaRest("client_deliverables", {
+    method: "POST",
+    body: JSON.stringify(d),
+  });
+}
+
+async function updateClientNotes(clientId: string, notes: string) {
+  return supaRest(`clients?id=eq.${clientId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ notes }),
+    headers: { Prefer: "return=minimal" },
+  });
+}
+
+/* ───────── generation logic ───────── */
+async function generateContent(type: string, client: Client, inputs: Record<string, string>): Promise<string> {
+  const clientName = client.name;
+  const industry = client.industry || "Non défini";
+
+  if (type === "strategie_360") {
+    const res = await fetch(`${API}/api/strategy/generate`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_name: clientName, industry, strategy_type: inputs.strategy_type || "strategie_360", notes: inputs.notes || "" }),
+    });
+    if (!res.ok) throw new Error(`Erreur stratégie: ${res.status}`);
+    const data = await res.json();
+    const phases = ["audit", "research", "strategy", "build", "launch", "scale", "kpis"];
+    return phases.filter(p => data[p]).map(p => "## " + p[0].toUpperCase() + p.slice(1) + "\n\n" + data[p]).join("\n\n---\n\n");
+  }
+
+  if (type.startsWith("rapport_")) {
+    const reportMap: Record<string, string> = { rapport_leadgen: "leadgen", rapport_ecommerce: "ecommerce", rapport_coaching: "coach" };
+    const res = await fetch(`${API}/api/recommendations`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: clientName, reportType: reportMap[type] || "leadgen", context: inputs.context || "" }),
+    });
+    if (!res.ok) throw new Error(`Erreur rapport: ${res.status}`);
+    return await readStream(res);
+  }
+
+  // diagnostic, brief_creatif, resume_client → /api/chat
+  const systemPrompts: Record<string, string> = {
+    diagnostic: `Tu es un expert marketing senior chez Partenaire.io. Le client est "${clientName}" dans l'industrie "${industry}". Réalise un diagnostic rapide et actionnable du problème suivant. Structure ta réponse avec: 1) Analyse du problème 2) Causes probables 3) Recommandations immédiates 4) Plan d'action.`,
+    brief_creatif: `Tu es un directeur créatif senior chez Partenaire.io. Le client est "${clientName}" dans l'industrie "${industry}". Crée un brief créatif complet incluant: 1) Objectif 2) Audience cible 3) Messages clés 4) Ton et style 5) Formats recommandés 6) Exemples d'angles créatifs 7) CTA suggérés.`,
+    resume_client: `Tu es un account manager senior chez Partenaire.io. Génère un résumé exécutif complet pour le client "${clientName}" dans l'industrie "${industry}". Inclus: 1) Profil client 2) Performance actuelle (Spend: ${money(client.meta_data?.spend)}, CPL: ${money(client.meta_data?.cpl)}, ROAS: ${client.meta_data?.roas || "N/A"}) 3) Forces et faiblesses 4) Opportunités 5) Prochaines étapes recommandées.`,
+  };
+
+  const userMsg = type === "resume_client"
+    ? `Génère un résumé exécutif complet pour ${clientName}.`
+    : type === "brief_creatif"
+      ? `Objectif du brief: ${inputs.objective || "Campagne générale"}`
+      : `Problème à diagnostiquer: ${inputs.problem || "Performance en baisse"}`;
+
+  const res = await fetch(`${API}/api/chat`, {
+    method: "POST",
+      credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system: systemPrompts[type] || systemPrompts.diagnostic,
+      messages: [{ role: "user", content: userMsg }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Erreur chat: ${res.status}`);
+  return await readStream(res);
+}
+
+async function readStream(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) return await res.text();
+  const decoder = new TextDecoder();
+  let result = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    result += decoder.decode(value, { stream: true });
+  }
+  return result;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════ */
+export default function WorkspacePage() {
+  const params = useParams();
+  const router = useRouter();
+  const clientId = typeof params.id === "string" ? params.id : "";
+
+  const [client, setClient] = useState<Client | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("overview");
+
+  // Deliverables tab
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [formInputs, setFormInputs] = useState<Record<string, string>>({});
+  const [generating, setGenerating] = useState(false);
+  const [genOutput, setGenOutput] = useState<string | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [deliverablesLoading, setDeliverablesLoading] = useState(false);
+  const [viewingDeliverable, setViewingDeliverable] = useState<Deliverable | null>(null);
+
+  // Context tab
+  const [notes, setNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  /* ── load client ── */
+  useEffect(() => {
+    if (!clientId) return;
+    setLoading(true);
+    fetch(`${API}/api/client-hub/clients?show_hidden=true`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        const found = list.find((c: Client) => c.id === clientId);
+        setClient(found || null);
+        if (found?.notes) setNotes(found.notes);
+      })
+      .catch(() => setClient(null))
+      .finally(() => setLoading(false));
+  }, [clientId]);
+
+  /* ── load deliverables ── */
+  const loadDeliverables = useCallback(async () => {
+    if (!clientId) return;
+    setDeliverablesLoading(true);
+    try {
+      const data = await fetchDeliverables(clientId);
+      setDeliverables(Array.isArray(data) ? data : []);
+    } catch { setDeliverables([]); }
+    finally { setDeliverablesLoading(false); }
+  }, [clientId]);
+
+  useEffect(() => { void loadDeliverables(); }, [loadDeliverables]);
+
+  /* ── generate deliverable ── */
+  const handleGenerate = useCallback(async () => {
+    if (!selectedType || !client) return;
+    setGenerating(true);
+    setGenOutput(null);
+    setGenError(null);
+    try {
+      const text = await generateContent(selectedType, client, formInputs);
+      setGenOutput(text);
+      // Save to Supabase
+      const typeDef = DELIVERABLE_TYPES.find((t) => t.key === selectedType);
+      await saveDeliverable({
+        client_id: client.id,
+        type: selectedType,
+        title: `${typeDef?.label || selectedType} — ${client.name}`,
+        content: { markdown: text, raw: text },
+        created_by: "workspace",
+        metadata: { inputs: formInputs },
+      });
+      await loadDeliverables();
+    } catch (err: unknown) {
+      setGenError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setGenerating(false);
+    }
+  }, [selectedType, client, formInputs, loadDeliverables]);
+
+  /* ── save notes ── */
+  const handleSaveNotes = useCallback(async () => {
+    if (!clientId) return;
+    setSavingNotes(true);
+    setNotesSaved(false);
+    try {
+      await updateClientNotes(clientId, notes);
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 2500);
+    } catch { /* silent */ }
+    finally { setSavingNotes(false); }
+  }, [clientId, notes]);
+
+  const currentTypeDef = useMemo(() => DELIVERABLE_TYPES.find((t) => t.key === selectedType), [selectedType]);
+
+  /* ── loading state ── */
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 40, height: 40, border: `3px solid ${ORANGE}33`, borderTopColor: ORANGE, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto" }} />
+        <p style={{ marginTop: 16, color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Chargement du workspace...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    </div>
+  );
+
+  if (!client) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 16 }}>Client introuvable.</p>
+      <button onClick={() => router.push("/clients")} style={{ background: ORANGE, color: "#17140f", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        Retour aux clients
+      </button>
+    </div>
+  );
+
+  const sources = [
+    { name: "Meta Ads", ok: !!client.meta_data?.spend },
+    { name: "Asana", ok: !!client.asana_project_id },
+    { name: "Slack", ok: !!client.slack_channel_id },
+    { name: "Drive", ok: !!client.google_drive_folder_id },
+  ];
+
+  const kpis = [
+    { label: "Ad Spend", value: money(client.meta_data?.spend), color: "#4ade80" },
+    { label: "CPL", value: money(client.meta_data?.cpl), color: "#f6c978" },
+    { label: "ROAS", value: client.meta_data?.roas ? `${client.meta_data.roas}x` : "—", color: "#fff" },
+    { label: "Retainer", value: money(client.retainer_monthly), color: ORANGE },
+  ];
+
+  const statusBadge = client.status === "active"
+    ? { bg: "rgba(74,222,128,0.1)", color: "#86efac", text: "Actif" }
+    : client.status === "paused"
+      ? { bg: "rgba(251,146,60,0.1)", color: "#fdba74", text: "Pause" }
+      : { bg: "rgba(248,113,113,0.1)", color: "#fca5a5", text: "Inactif" };
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "Vue d'ensemble" },
+    { key: "deliverables", label: "Livrables" },
+    { key: "context", label: "Contexte" },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      {/* ── NAV BAR (simplified inline) ── */}
+      <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,15,18,0.92)", backdropFilter: "blur(24px)" }}>
+        <div style={{ maxWidth: 1600, margin: "0 auto", display: "flex", height: 64, alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
+          <Link href="/hub" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+            <span style={{ width: 40, height: 40, borderRadius: 16, background: `linear-gradient(135deg, ${ORANGE}, #ffd980)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Image src="/logo.png" alt="P" width={28} height={28} style={{ objectFit: "contain" }} />
+            </span>
+            <span style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>Partenaire.io</span>
+              <span style={{ fontSize: 16, fontWeight: 600, color: "#fff" }}>Workspace</span>
+            </span>
+          </Link>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href="/clients" style={{ padding: "8px 16px", borderRadius: 20, fontSize: 13, color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)", textDecoration: "none", transition: "all 0.2s" }}>
+              Clients
+            </Link>
+            <Link href="/hub" style={{ padding: "8px 16px", borderRadius: 20, fontSize: 13, color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)", textDecoration: "none" }}>
+              Hub
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 20px 60px" }}>
+        {/* ── Client header ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <button onClick={() => router.push("/clients")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 13, padding: "4px 0" }}>
+            ← Retour
+          </button>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginBottom: 8 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", margin: 0 }}>{client.name}</h1>
+          <span style={{ padding: "4px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: statusBadge.bg, color: statusBadge.color }}>{statusBadge.text}</span>
+          {client.industry && <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>{client.industry}</span>}
+        </div>
+
+        {/* ── Tabs ── */}
+        <div style={{ display: "flex", gap: 4, marginTop: 20, marginBottom: 28, background: "rgba(255,255,255,0.03)", borderRadius: 28, padding: 4, border: "1px solid rgba(255,255,255,0.06)", width: "fit-content" }}>
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{ padding: "10px 22px", borderRadius: 24, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", transition: "all 0.2s",
+                background: tab === t.key ? ORANGE : "transparent",
+                color: tab === t.key ? "#17140f" : "rgba(255,255,255,0.45)",
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ═══ TAB: VUE D'ENSEMBLE ═══ */}
+        {tab === "overview" && (
+          <div>
+            {/* KPI strip */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
+              {kpis.map((k) => (
+                <div key={k.label} style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "18px 20px" }}>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: k.color }}>{k.value}</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.16em", color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Connected sources */}
+            <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "20px 24px", marginBottom: 24 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700, marginBottom: 14 }}>Sources connectées</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                {sources.map((s) => (
+                  <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+                    <span style={{ fontSize: 14 }}>{s.ok ? "✓" : "✕"}</span>
+                    <span style={{ fontSize: 13, color: s.ok ? "#86efac" : "rgba(255,255,255,0.25)", fontWeight: 500 }}>{s.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+              {[
+                { label: "Générer une stratégie", type: "strategie_360" },
+                { label: "Générer un rapport", type: "rapport_leadgen" },
+                { label: "Diagnostic rapide", type: "diagnostic" },
+              ].map((a) => (
+                <button key={a.type} onClick={() => { setTab("deliverables"); setSelectedType(a.type); setFormInputs({}); setGenOutput(null); setGenError(null); }}
+                  style={{ background: "rgba(232,145,45,0.08)", border: `1px solid rgba(232,145,45,0.2)`, borderRadius: 14, padding: "16px 20px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = "rgba(232,145,45,0.15)"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = "rgba(232,145,45,0.08)"; }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#f6c978" }}>{a.label}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Cliquez pour démarrer →</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ TAB: LIVRABLES ═══ */}
+        {tab === "deliverables" && (
+          <div>
+            {/* Type selector */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 28 }}>
+              {DELIVERABLE_TYPES.map((dt) => (
+                <button key={dt.key} onClick={() => { setSelectedType(dt.key); setFormInputs({}); setGenOutput(null); setGenError(null); setViewingDeliverable(null); }}
+                  style={{
+                    background: selectedType === dt.key ? "rgba(232,145,45,0.12)" : CARD,
+                    border: selectedType === dt.key ? `2px solid ${ORANGE}` : "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 14, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+                  }}>
+                  <div style={{ fontSize: 20, marginBottom: 6 }}>{dt.icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: selectedType === dt.key ? "#f6c978" : "#fff" }}>{dt.label}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{dt.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Generation form */}
+            {currentTypeDef && !viewingDeliverable && (
+              <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px", marginBottom: 28 }}>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700, marginBottom: 16 }}>
+                  {currentTypeDef.icon} {currentTypeDef.label}
+                </div>
+                {currentTypeDef.inputs.map((inp) => (
+                  <div key={inp.key} style={{ marginBottom: 14 }}>
+                    <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>{inp.label}</label>
+                    <input
+                      value={formInputs[inp.key] || ""}
+                      onChange={(e) => setFormInputs((p) => ({ ...p, [inp.key]: e.target.value }))}
+                      placeholder={inp.placeholder}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                ))}
+                <button onClick={handleGenerate} disabled={generating}
+                  style={{ background: generating ? "rgba(232,145,45,0.5)" : ORANGE, color: "#17140f", border: "none", borderRadius: 10, padding: "12px 32px", fontSize: 14, fontWeight: 700, cursor: generating ? "wait" : "pointer", marginTop: 4, transition: "all 0.2s" }}>
+                  {generating ? "Génération en cours..." : "Générer"}
+                </button>
+              </div>
+            )}
+
+            {/* Generation error */}
+            {genError && (
+              <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 12, padding: "14px 20px", marginBottom: 20, color: "#fca5a5", fontSize: 13 }}>
+                Erreur: {genError}
+              </div>
+            )}
+
+            {/* Generation output */}
+            {genOutput && !viewingDeliverable && (
+              <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px", marginBottom: 28 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700 }}>Résultat généré</div>
+                  <span style={{ fontSize: 11, color: "rgba(74,222,128,0.7)", fontWeight: 500 }}>✓ Sauvegardé</span>
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.75, color: "rgba(255,255,255,0.65)" }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(genOutput) }} />
+              </div>
+            )}
+
+            {/* Viewing a past deliverable */}
+            {viewingDeliverable && (
+              <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px", marginBottom: 28 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700 }}>{viewingDeliverable.title}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{shortDate(viewingDeliverable.created_at)}</div>
+                  </div>
+                  <button onClick={() => setViewingDeliverable(null)} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
+                    Fermer
+                  </button>
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.75, color: "rgba(255,255,255,0.65)" }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(viewingDeliverable.content?.markdown || viewingDeliverable.content?.raw || viewingDeliverable.content?.text || JSON.stringify(viewingDeliverable.content)) }} />
+              </div>
+            )}
+
+            {/* Past deliverables timeline */}
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.3)", fontWeight: 600, marginBottom: 14 }}>
+                Historique des livrables {deliverablesLoading && "— chargement..."}
+              </div>
+              {deliverables.length === 0 && !deliverablesLoading && (
+                <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "20px 24px", color: "rgba(255,255,255,0.3)", fontSize: 13, textAlign: "center" }}>
+                  Aucun livrable généré pour le moment.
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {deliverables.map((d) => {
+                  const typeDef = DELIVERABLE_TYPES.find((t) => t.key === d.type);
+                  return (
+                    <button key={d.id} onClick={() => { setViewingDeliverable(d); setGenOutput(null); }}
+                      style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "14px 20px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, transition: "all 0.15s" }}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = "rgba(232,145,45,0.3)"; }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18 }}>{typeDef?.icon || "📄"}</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{d.title}</div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{shortDate(d.created_at)}</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, color: ORANGE, fontWeight: 500 }}>Voir →</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ TAB: CONTEXTE ═══ */}
+        {tab === "context" && (
+          <div>
+            {/* Editable notes */}
+            <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px", marginBottom: 24 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700, marginBottom: 14 }}>Notes client</div>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={8}
+                placeholder="Ajoutez des notes sur ce client... stratégie, historique, préférences, etc."
+                style={{ width: "100%", padding: "14px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 14, lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+                <button onClick={handleSaveNotes} disabled={savingNotes}
+                  style={{ background: savingNotes ? "rgba(232,145,45,0.5)" : ORANGE, color: "#17140f", border: "none", borderRadius: 10, padding: "10px 28px", fontSize: 13, fontWeight: 700, cursor: savingNotes ? "wait" : "pointer" }}>
+                  {savingNotes ? "Sauvegarde..." : "Sauvegarder"}
+                </button>
+                {notesSaved && <span style={{ fontSize: 12, color: "#86efac" }}>✓ Sauvegardé</span>}
+              </div>
+            </div>
+
+            {/* Connected sources */}
+            <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px", marginBottom: 24 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700, marginBottom: 14 }}>Sources connectées</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+                {sources.map((s) => (
+                  <div key={s.name} style={{ padding: "14px 18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{s.name}</div>
+                    <div style={{ fontSize: 12, marginTop: 4, color: s.ok ? "#86efac" : "rgba(255,255,255,0.25)" }}>{s.ok ? "✓ Connecté" : "✕ Non connecté"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance data */}
+            <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "24px 28px" }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: ORANGE, fontWeight: 700, marginBottom: 14 }}>Données de performance</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+                {[
+                  { label: "Ad Spend", value: money(client.meta_data?.spend) },
+                  { label: "CPL", value: money(client.meta_data?.cpl) },
+                  { label: "ROAS", value: client.meta_data?.roas ? `${client.meta_data.roas}x` : "—" },
+                  { label: "Leads", value: client.meta_data?.leads ? String(client.meta_data.leads) : "—" },
+                  { label: "Budget mensuel", value: money(client.monthly_budget) },
+                  { label: "Retainer", value: money(client.retainer_monthly) },
+                ].map((item) => (
+                  <div key={item.label} style={{ padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.04)", background: "rgba(255,255,255,0.02)" }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{item.value}</div>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

@@ -14,7 +14,6 @@ import { StrategyRequestForm } from "@/components/strategy/strategy-request-form
 import { StrategyRetrievedContextPanel } from "@/components/strategy/strategy-retrieved-context-panel";
 import { Nav } from "@/components/nav";
 import { Badge } from "@/components/ui/badge";
-import { mdToHtml } from '@/lib/render-deliverable';
 import type {
   StrategyEngineOutput,
   StrategyHistoryRecord,
@@ -224,7 +223,7 @@ export default function StrategiePage() {
   }, [clients, deferredSearch]);
 
   useEffect(() => {
-    fetch(`/api/client-hub/clients?show_hidden=true`, { credentials: "include" })
+    fetch(`/api/client-hub/clients?show_hidden=true`)
       .then((response) => response.json())
       .then((data) => setClients(Array.isArray(data) ? data : []))
       .catch(() => setClients([]));
@@ -272,7 +271,6 @@ export default function StrategiePage() {
         `/api/strategy-engine/context?clientId=${encodeURIComponent(client.id)}`,
         {
           cache: "no-store",
-          credentials: "include",
         },
       );
       const data = (await response.json()) as Partial<StrategyContextResponse> & {
@@ -400,7 +398,6 @@ export default function StrategiePage() {
     try {
       const response = await fetch("/api/strategy-engine/profile", {
         method: "POST",
-        credentials: "include",
         headers: jsonHeaders(),
         body: JSON.stringify({
           profile,
@@ -441,7 +438,6 @@ export default function StrategiePage() {
     try {
       const response = await fetch("/api/strategy-engine/request", {
         method: "POST",
-        credentials: "include",
         headers: jsonHeaders(),
         body: JSON.stringify({
           profile,
@@ -487,7 +483,6 @@ export default function StrategiePage() {
       // Fire-and-forget: send profile/context to Codex for storage
       void fetch("/api/strategy-engine/generate", {
         method: "POST",
-        credentials: "include",
         headers: jsonHeaders(),
         body: JSON.stringify({ profile, request: requestState, sourceContext }),
       }).then(async (r) => {
@@ -505,7 +500,6 @@ export default function StrategiePage() {
       // Actual generation via FastAPI V1 (7 phases)
       const response = await fetch("/api/strategy/generate", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           client_name: selectedClient?.name ?? profile?.identity?.brandName ?? "",
@@ -534,6 +528,7 @@ export default function StrategiePage() {
       });
       setOutput(null);
       setMeta(null);
+      setPhaseOutput(null);
       setStatusMessage("Strategie 7-phases generee via FastAPI.");
     } catch (generationError) {
       setError(
@@ -860,7 +855,50 @@ export default function StrategiePage() {
                           <div
                             className="prose prose-invert prose-sm max-w-none text-white/65 [&_h3]:text-white/80 [&_h3]:text-sm [&_h3]:font-semibold [&_strong]:text-white/80 [&_table]:text-xs [&_th]:text-left [&_th]:pr-4 [&_td]:pr-4 [&_td]:py-1"
                             dangerouslySetInnerHTML={{
-                              __html: mdToHtml(text)
+                              __html: (() => {
+                                const lines = text.split('\n');
+                                const parts: string[] = [];
+                                let inUl = false;
+                                let inOl = false;
+                                const closeLists = () => {
+                                  if (inUl) { parts.push('</ul>'); inUl = false; }
+                                  if (inOl) { parts.push('</ol>'); inOl = false; }
+                                };
+                                const fmt = (s: string) => s
+                                  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                  .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+                                for (const raw of lines) {
+                                  const ln = raw.trimEnd();
+                                  if (!ln.trim()) { closeLists(); continue; }
+                                  if (/^---+$/.test(ln.trim())) { closeLists(); parts.push('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;"/>'); continue; }
+                                  const h1 = ln.match(/^# (.+)/);
+                                  if (h1) { closeLists(); parts.push('<h2 style="color:#E8912D;font-size:18px;font-weight:700;margin:20px 0 10px;">' + fmt(h1[1]) + '</h2>'); continue; }
+                                  const h2 = ln.match(/^## (.+)/);
+                                  if (h2) { closeLists(); parts.push('<h3 style="color:#E8912D;font-size:16px;font-weight:700;margin:16px 0 8px;">' + fmt(h2[1]) + '</h3>'); continue; }
+                                  const h3 = ln.match(/^### (.+)/);
+                                  if (h3) { closeLists(); parts.push('<h3>' + fmt(h3[1]) + '</h3>'); continue; }
+                                  const h4 = ln.match(/^#### (.+)/);
+                                  if (h4) { closeLists(); parts.push('<h4 style="font-size:13px;font-weight:700;color:rgba(246,247,255,0.75);margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.05em;">' + fmt(h4[1]) + '</h4>'); continue; }
+                                  const ul = ln.match(/^[\-\*] (.+)/);
+                                  if (ul) {
+                                    if (inOl) { parts.push('</ol>'); inOl = false; }
+                                    if (!inUl) { parts.push('<ul style="margin:6px 0;padding-left:18px;">'); inUl = true; }
+                                    parts.push('<li style="margin-bottom:4px;">' + fmt(ul[1]) + '</li>');
+                                    continue;
+                                  }
+                                  const ol = ln.match(/^\d+\. (.+)/);
+                                  if (ol) {
+                                    if (inUl) { parts.push('</ul>'); inUl = false; }
+                                    if (!inOl) { parts.push('<ol style="margin:6px 0;padding-left:18px;">'); inOl = true; }
+                                    parts.push('<li style="margin-bottom:4px;">' + fmt(ol[1]) + '</li>');
+                                    continue;
+                                  }
+                                  closeLists();
+                                  parts.push('<p style="margin:6px 0;">' + fmt(ln) + '</p>');
+                                }
+                                closeLists();
+                                return parts.join('\n');
+                              })()
                             }}
                           />
                         </div>
