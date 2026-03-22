@@ -27,6 +27,10 @@ import type {
   StrategySeedClient,
   StrategySourceContextRecord,
 } from "@/lib/strategy-schema";
+import {
+  createEmptyStrategyProfile,
+  createEmptyStrategyRequest,
+} from "@/lib/strategy-schema";
 
 type StrategyContextResponse = {
   client: StrategySeedClient;
@@ -279,32 +283,55 @@ export default function StrategiePage() {
         error?: string;
       };
 
-      if (!response.ok || !data.profile || !data.request) {
-        throw new Error(data.error || "Impossible de charger le contexte strategique.");
+      if (response.ok && data.profile && data.request) {
+        setSelectedClient(data.client ?? client);
+        setProfile(data.profile);
+        setRequestState(data.request);
+        setSourceContext(Array.isArray(data.sourceContext) ? data.sourceContext : []);
+        setEvaluation(data.evaluation ?? null);
+        setOverlays(data.overlays ?? null);
+        setHistory(Array.isArray(data.history) ? data.history : []);
+        setPermissions(
+          data.permissions ?? {
+            canAdmin: false,
+            canWrite: false,
+            role: null,
+          },
+        );
+      } else {
+        // Fallback: build minimal profile from client data so generation still works
+        const fallbackProfile = createEmptyStrategyProfile({
+          clientId: client.id,
+          clientName: client.name,
+        });
+        if (client.industry) fallbackProfile.business.industry = client.industry;
+        if (client.website) fallbackProfile.identity.websiteUrl = client.website;
+        const fallbackRequest = createEmptyStrategyRequest({
+          clientId: client.id,
+        });
+        setSelectedClient(client);
+        setProfile(fallbackProfile);
+        setRequestState(fallbackRequest);
+        setPermissions({ canAdmin: false, canWrite: true, role: null });
       }
-
-      setSelectedClient(data.client ?? client);
-      setProfile(data.profile);
-      setRequestState(data.request);
-      setSourceContext(Array.isArray(data.sourceContext) ? data.sourceContext : []);
-      setEvaluation(data.evaluation ?? null);
-      setOverlays(data.overlays ?? null);
-      setHistory(Array.isArray(data.history) ? data.history : []);
-      setPermissions(
-        data.permissions ?? {
-          canAdmin: false,
-          canWrite: false,
-          role: null,
-        },
-      );
-      // Auto-advance to step 2 after loading context
+      // Auto-advance to step 2 after loading context (or fallback)
       setCurrentStep(2);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Impossible de charger le contexte strategique.",
-      );
+      // Even on network error, create fallback so user can still generate
+      const fallbackProfile = createEmptyStrategyProfile({
+        clientId: client.id,
+        clientName: client.name,
+      });
+      if (client.industry) fallbackProfile.business.industry = client.industry;
+      if (client.website) fallbackProfile.identity.websiteUrl = client.website;
+      const fallbackRequest = createEmptyStrategyRequest({
+        clientId: client.id,
+      });
+      setSelectedClient(client);
+      setProfile(fallbackProfile);
+      setRequestState(fallbackRequest);
+      setPermissions({ canAdmin: false, canWrite: true, role: null });
+      setCurrentStep(2);
     } finally {
       setContextLoading(false);
     }
@@ -893,7 +920,7 @@ export default function StrategiePage() {
               ) : null}
 
               {!output && !phaseOutput && selectedClient ? (
-                <div className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-sm text-white/38">
+                <div className="mt-6 rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/38">
                   <div className="mb-2 inline-flex items-center gap-2 text-white/55">
                     <Sparkles className="h-4 w-4" />
                     Sortie structuree

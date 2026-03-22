@@ -262,7 +262,7 @@ export default function ClientsPage() {
             onClick={() => setView("detail")}
             variant="outline"
             size="sm"
-            className="mb-5 border-white/10 text-white/45"
+            className="mb-5 border-white/[0.06] text-white/45"
           >
             <ArrowLeft className="mr-2 h-3.5 w-3.5" />
             Retour au client
@@ -321,7 +321,7 @@ export default function ClientsPage() {
             }}
             variant="outline"
             size="sm"
-            className="mb-5 border-white/10 text-white/45"
+            className="mb-5 border-white/[0.06] text-white/45"
           >
             <ArrowLeft className="mr-2 h-3.5 w-3.5" />
             Retour a la liste
@@ -347,7 +347,7 @@ export default function ClientsPage() {
                 size="sm"
                 onClick={() => void openClient(selectedClient)}
                 variant="outline"
-                className="border-white/10 text-white/55"
+                className="border-white/[0.06] text-white/55"
               >
                 {detailLoading || strategiesLoading ? (
                   <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -378,7 +378,7 @@ export default function ClientsPage() {
                   window.open(`/strategie?client=${encodeURIComponent(selectedClient.name)}`, "_blank")
                 }
                 variant="outline"
-                className="border-white/10 text-white/55"
+                className="border-white/[0.06] text-white/55"
               >
                 Generer strategie
               </Button>
@@ -387,7 +387,7 @@ export default function ClientsPage() {
                 onClick={() => void toggleVisibility()}
                 variant="outline"
                 disabled={savingVisibility}
-                className="border-white/10 text-white/40"
+                className="border-white/[0.06] text-white/40"
               >
                 {savingVisibility ? (
                   <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -425,7 +425,7 @@ export default function ClientsPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="card-hover rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-4"
+                className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#1a1a1f] p-4"
               >
                 <div className={`text-xl font-bold ${item.tone}`}>{item.value}</div>
                 <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/30">
@@ -445,7 +445,7 @@ export default function ClientsPage() {
                 </div>
 
                 {strategiesLoading ? (
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/35">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/35">
                     Chargement des strategies...
                   </div>
                 ) : strategies.length > 0 ? (
@@ -458,7 +458,7 @@ export default function ClientsPage() {
                           setStrategyView(strategy);
                           setView("strategy");
                         }}
-                        className="card-hover w-full rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left"
+                        className="card-hover w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4 text-left"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm font-semibold text-white">
@@ -475,7 +475,7 @@ export default function ClientsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/35">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/35">
                     Aucune strategie archivee pour ce client.
                   </div>
                 )}
@@ -498,7 +498,7 @@ export default function ClientsPage() {
                     ].map((integration) => (
                       <div
                         key={integration.name}
-                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3"
+                        className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-3"
                       >
                         <div className="text-xs font-semibold text-white">{integration.name}</div>
                         <div
@@ -557,14 +557,14 @@ export default function ClientsPage() {
                 {selectedNotes.length > 0 || selectedClient.notes ? (
                   <div className="space-y-2.5">
                     {selectedClient.notes ? (
-                      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm leading-6 text-white/60">
+                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-4 text-sm leading-6 text-white/60">
                         {selectedClient.notes}
                       </div>
                     ) : null}
                     {selectedNotes.slice(0, 4).map((note, index) => (
                       <div
                         key={`note-${index}`}
-                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4"
+                        className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-4"
                       >
                         <div className="text-[11px] uppercase tracking-[0.16em] text-white/28">
                           {shortDate(note.created_at)}
@@ -594,7 +594,7 @@ export default function ClientsPage() {
                     {selectedActivity.slice(0, 5).map((entry, index) => (
                       <div
                         key={`activity-${index}`}
-                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4"
+                        className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] p-4"
                       >
                         <div className="text-[11px] uppercase tracking-[0.16em] text-white/28">
                           {entry.type || "Activite"} - {shortDate(entry.created_at)}
@@ -635,7 +635,7 @@ export default function ClientsPage() {
           ].map((item) => (
             <div
               key={item.label}
-              className="card-hover rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-4 text-center"
+              className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#1a1a1f] p-4 text-center"
             >
               <div className={`text-2xl font-bold ${item.tone}`}>{item.value}</div>
               <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/30">
@@ -661,7 +661,7 @@ export default function ClientsPage() {
               className={
                 filter === value
                   ? "bg-[#E8912D] text-[#17140f]"
-                  : "border-white/10 text-white/40"
+                  : "border-white/[0.06] text-white/40"
               }
             >
               {value === "all"
@@ -677,11 +677,11 @@ export default function ClientsPage() {
 
         <div className="mt-6 grid gap-3 md:grid-cols-2">
           {loadingClients ? (
-            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
+            <div className="col-span-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
               Chargement des clients...
             </div>
           ) : filteredClients.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
+            <div className="col-span-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
               Aucun client ne correspond aux filtres.
             </div>
           ) : (
@@ -690,7 +690,7 @@ export default function ClientsPage() {
                 key={client.id}
                 type="button"
                 onClick={() => void openClient(client)}
-                className="card-hover rounded-2xl border border-white/[0.06] bg-[#1a1a1f] px-4 py-4 text-left"
+                className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#1a1a1f] px-4 py-4 text-left"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>

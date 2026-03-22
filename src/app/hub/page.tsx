@@ -846,7 +846,7 @@ export default function HubPage() {
                 <Button
                   variant="outline"
                   onClick={() => openBrainstorm()}
-                  className="h-11 rounded-2xl border-white/10 bg-white/[0.03] px-5 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
+                  className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] px-5 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
                 >
                   <Brain className="mr-2 h-4 w-4" />
                   Brainstorm
@@ -895,10 +895,10 @@ export default function HubPage() {
               onFocus={() => setClientDropdownOpen(true)}
               onBlur={() => setTimeout(() => setClientDropdownOpen(false), 200)}
               placeholder="Accéder au workspace d'un client..."
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.03] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25"
+              className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25"
             />
             {clientDropdownOpen && clientSearch.length > 0 && filteredClients.length > 0 && (
-              <div className="absolute left-0 right-0 top-[52px] z-50 max-h-[260px] overflow-y-auto rounded-2xl border border-white/10 bg-[#1a1a1f] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+              <div className="absolute left-0 right-0 top-[52px] z-50 max-h-[260px] overflow-y-auto rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#1a1a1f] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                 {filteredClients.slice(0, 8).map((client) => (
                   <button
                     key={client.id}
@@ -939,7 +939,7 @@ export default function HubPage() {
                   key={d.id}
                   type="button"
                   onClick={() => router.push(`/workspace/${d.client_id}`)}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition hover:bg-[#E8912D]/8"
+                  className="flex w-full items-center gap-4 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition hover:bg-[#E8912D]/8"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -1048,7 +1048,7 @@ export default function HubPage() {
                   Raccourcis V1 pour les zones les plus consultees.
                 </p>
               </div>
-              <Badge className="border border-white/10 bg-white/[0.04] text-white/45">
+              <Badge className="border border-white/[0.06] bg-white/[0.04] text-white/45">
                 4 raccourcis
               </Badge>
             </div>
@@ -1061,7 +1061,7 @@ export default function HubPage() {
                     href={action.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="card-hover rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 no-underline"
+                    className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4 no-underline"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1075,7 +1075,7 @@ export default function HubPage() {
                   <Link
                     key={action.label}
                     href={action.href}
-                    className="card-hover rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 no-underline"
+                    className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4 no-underline"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1110,11 +1110,11 @@ export default function HubPage() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-white/32">Statut</div>
                 <div className="mt-2 text-sm font-semibold text-white">{refreshState.message}</div>
               </div>
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-white/32">
                   Derniere info
                 </div>
@@ -1144,7 +1144,7 @@ export default function HubPage() {
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-white">Idees d&apos;agents</h2>
-                <Badge className="border border-white/10 bg-white/[0.04] text-white/45">
+                <Badge className="border border-white/[0.06] bg-white/[0.04] text-white/45">
                   {ideas.length} idees
                 </Badge>
               </div>
@@ -1157,7 +1157,7 @@ export default function HubPage() {
               <select
                 value={categoryFilter}
                 onChange={(event) => setCategoryFilter(event.target.value)}
-                className="h-11 rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
               >
                 {categoryOptions.map((option) => (
                   <option key={option.value || "all"} value={option.value}>
@@ -1169,7 +1169,7 @@ export default function HubPage() {
               <select
                 value={sortMode}
                 onChange={(event) => setSortMode(event.target.value)}
-                className="h-11 rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
               >
                 <option value="votes">Plus votees</option>
                 <option value="newest">Recentes</option>
@@ -1179,7 +1179,7 @@ export default function HubPage() {
               <Button
                 variant="outline"
                 onClick={() => openBrainstorm()}
-                className="h-11 rounded-2xl border-white/10 bg-white/[0.03] px-4 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
+                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] px-4 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Brainstorm
@@ -1197,11 +1197,11 @@ export default function HubPage() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {ideasLoading ? (
-              <div className="col-span-full rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center text-sm text-white/35">
+              <div className="col-span-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-8 text-center text-sm text-white/35">
                 Chargement des idees...
               </div>
             ) : filteredIdeas.length === 0 ? (
-              <div className="col-span-full rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center text-sm text-white/35">
+              <div className="col-span-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-8 text-center text-sm text-white/35">
                 Aucune idee ne correspond aux filtres en cours.
               </div>
             ) : (
@@ -1269,7 +1269,7 @@ export default function HubPage() {
                           size="sm"
                           onClick={() => void voteIdea(idea)}
                           disabled={!userEmail}
-                          className={`rounded-xl border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white ${
+                          className={`rounded-xl border-white/[0.06] bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white ${
                             voted ? "border-[#E8912D]/25 bg-[#E8912D]/10 text-[#f6c978]" : ""
                           }`}
                         >
@@ -1286,7 +1286,7 @@ export default function HubPage() {
                         <select
                           value={normalizeStatus(idea.status)}
                           onChange={(event) => void updateIdeaStatus(idea.id, event.target.value)}
-                          className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white outline-none focus:border-[#E8912D]"
+                          className="h-10 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-white outline-none focus:border-[#E8912D]"
                         >
                           <option value="new">Nouveau</option>
                           <option value="reviewing">En revision</option>
@@ -1320,7 +1320,7 @@ export default function HubPage() {
               <button
                 type="button"
                 onClick={() => setShowIdeaModal(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 transition hover:bg-white/[0.06] hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/55 transition hover:bg-white/[0.06] hover:text-white"
               >
                 X
               </button>
@@ -1335,7 +1335,7 @@ export default function HubPage() {
                   value={ideaTitle}
                   onChange={(event) => setIdeaTitle(event.target.value)}
                   placeholder="Ex: Client Success Agent"
-                  className="h-12 rounded-2xl border-white/10 bg-white/[0.03] text-white"
+                  className="h-12 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] text-white"
                 />
               </div>
 
@@ -1348,7 +1348,7 @@ export default function HubPage() {
                   onChange={(event) => setIdeaDescription(event.target.value)}
                   placeholder="Probleme resolu, integratons, ROI, signaux utiles..."
                   rows={5}
-                  className="rounded-2xl border-white/10 bg-white/[0.03] text-white"
+                  className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] text-white"
                 />
               </div>
 
@@ -1360,7 +1360,7 @@ export default function HubPage() {
                   <select
                     value={ideaCategory}
                     onChange={(event) => setIdeaCategory(event.target.value)}
-                    className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                    className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
                   >
                     {categoryOptions
                       .filter((option) => option.value)
@@ -1378,7 +1378,7 @@ export default function HubPage() {
                   <select
                     value={ideaPriority}
                     onChange={(event) => setIdeaPriority(event.target.value)}
-                    className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                    className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
                   >
                     <option value="nice-to-have">Nice-to-have</option>
                     <option value="important">Important</option>
@@ -1402,7 +1402,7 @@ export default function HubPage() {
                     },
                   )
                 }
-                className="h-11 flex-1 rounded-2xl border-orange-400/20 bg-orange-400/10 text-orange-300 hover:bg-orange-400/16 hover:text-white"
+                className="h-11 flex-1 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-orange-400/20 bg-orange-400/10 text-orange-300 hover:bg-orange-400/16 hover:text-white"
               >
                 <Brain className="mr-2 h-4 w-4" />
                 Analyser avec Claude
@@ -1450,14 +1450,14 @@ export default function HubPage() {
               <button
                 type="button"
                 onClick={() => setBrainstormOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 transition hover:bg-white/[0.06] hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/55 transition hover:bg-white/[0.06] hover:text-white"
               >
                 X
               </button>
             </div>
 
             {brainstormContext ? (
-              <div className="mt-4 rounded-2xl border border-orange-400/15 bg-orange-400/8 p-3">
+              <div className="mt-4 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-orange-400/15 bg-orange-400/8 p-3">
                 <div className="text-[10px] uppercase tracking-[0.18em] text-orange-300/75">
                   Contexte
                 </div>
@@ -1501,7 +1501,7 @@ export default function HubPage() {
                 onChange={(event) => setBrainstormInput(event.target.value)}
                 placeholder="Pose une question, ou demande une analyse technique..."
                 rows={2}
-                className="min-h-[52px] rounded-2xl border-white/10 bg-white/[0.03] text-white"
+                className="min-h-[52px] rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] text-white"
               />
               <Button
                 onClick={() => void sendBrainstormMessage()}

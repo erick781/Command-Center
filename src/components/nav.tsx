@@ -12,7 +12,6 @@ const links = [
   { href: "/tracker", label: "Tracker" },
   { href: "/clients", label: "Clients" },
   { href: "/strategie", label: "Strategie" },
-  { href: "/workspace", label: "Workspace" },
 ];
 
 export function Nav() {

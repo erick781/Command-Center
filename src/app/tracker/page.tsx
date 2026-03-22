@@ -523,7 +523,7 @@ export default function TrackerPage() {
     <div className="min-h-screen">
       <Nav />
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
-        <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-6 flex flex-col gap-4 border-b border-white/[0.06] pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-green-300">
               <span className="h-2 w-2 rounded-full bg-green-400" />
@@ -542,14 +542,14 @@ export default function TrackerPage() {
             <Button
               onClick={refresh}
               variant="outline"
-              className="border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+              className="border-white/[0.06] bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
             >
               Refresh
             </Button>
             <Button
               onClick={exportCurrentCsv}
               variant="outline"
-              className="border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+              className="border-white/[0.06] bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
             >
               Export CSV
             </Button>
@@ -566,7 +566,7 @@ export default function TrackerPage() {
           {summaryCards.map((item) => (
             <Card
               key={item.label}
-              className="border-white/10 bg-[#17171b] shadow-[0_14px_40px_rgba(0,0,0,0.22)]"
+              className="border-white/[0.06] bg-[#17171b] shadow-[0_14px_40px_rgba(0,0,0,0.22)]"
             >
               <CardContent className="pt-5">
                 <div className={cn("text-2xl font-bold tracking-[-0.04em]", item.accent)}>
@@ -580,19 +580,19 @@ export default function TrackerPage() {
           ))}
         </div>
 
-        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#151519]/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#151519]/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search client, industry, notes, flags..."
-                className="h-10 border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30"
+                className="h-10 border-white/[0.06] bg-white/[0.03] text-sm text-white placeholder:text-white/30"
               />
               <select
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as SortKey)}
-                className="h-10 min-w-[150px] rounded-lg border border-white/10 bg-white/[0.03] px-3 text-sm text-white outline-none transition focus:border-[#E8912D]"
+                className="h-10 min-w-[150px] rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-white outline-none transition focus:border-[#E8912D]"
               >
                 <option value="risk">Sort by risk</option>
                 <option value="spend">Sort by spend</option>
@@ -617,7 +617,7 @@ export default function TrackerPage() {
                   variant={active ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "rounded-full border-white/10 text-xs",
+                    "rounded-full border-white/[0.06] text-xs",
                     active
                       ? "bg-[#E8912D] text-[#17140f] hover:bg-[#f2ab4e]"
                       : "bg-white/[0.03] text-white/60 hover:border-white/20 hover:bg-white/[0.06] hover:text-white",
@@ -632,8 +632,8 @@ export default function TrackerPage() {
 
         <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
           <section className="space-y-4">
-            <Card className="border-white/10 bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-              <CardHeader className="border-b border-white/10 pb-4">
+            <Card className="border-white/[0.06] bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+              <CardHeader className="border-b border-white/[0.06] pb-4">
                 <CardTitle className="text-lg text-white">Portfolio table</CardTitle>
                 <CardDescription className="text-white/40">
                   Searchable client rows with health, performance, and visibility
@@ -643,7 +643,7 @@ export default function TrackerPage() {
               <CardContent className="p-0">
                 <Table>
                   <TableHeader className="bg-white/[0.02]">
-                    <TableRow className="border-white/10 hover:bg-transparent">
+                    <TableRow className="border-white/[0.06] hover:bg-transparent">
                       <TableHead className="px-4 py-3 text-[11px] uppercase tracking-[0.22em] text-white/35">
                         Client
                       </TableHead>
@@ -672,7 +672,7 @@ export default function TrackerPage() {
                   </TableHeader>
                   <TableBody>
                     {visibleClients.length === 0 ? (
-                      <TableRow className="border-white/10">
+                      <TableRow className="border-white/[0.06]">
                         <TableCell colSpan={8} className="px-4 py-10 text-center">
                           <div className="text-sm text-white/40">
                             No clients match the current filter.
@@ -693,7 +693,7 @@ export default function TrackerPage() {
                                 setSelectedId(expanded ? null : client.id)
                               }
                               className={cn(
-                                "cursor-pointer border-white/10 transition hover:bg-white/[0.03]",
+                                "cursor-pointer border-white/[0.06] transition hover:bg-white/[0.03]",
                                 expanded && "bg-white/[0.04]",
                               )}
                             >
@@ -755,10 +755,10 @@ export default function TrackerPage() {
                             </TableRow>
 
                             {expanded && (
-                              <TableRow className="border-white/10 bg-white/[0.02]">
+                              <TableRow className="border-white/[0.06] bg-white/[0.02]">
                                 <TableCell colSpan={8} className="px-4 py-4">
                                   <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-                                    <div className="rounded-2xl border border-white/10 bg-[#141418] p-4">
+                                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#141418] p-4">
                                       <div className="mb-3 flex items-center justify-between gap-3">
                                         <div>
                                           <div className="text-xs uppercase tracking-[0.24em] text-white/30">
@@ -771,7 +771,7 @@ export default function TrackerPage() {
                                         <div className="flex flex-wrap gap-2">
                                           <Link
                                             href="/clients"
-                                            className="inline-flex h-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-[0.8rem] font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                                            className="inline-flex h-7 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 text-[0.8rem] font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
                                           >
                                             Open client hub
                                           </Link>
@@ -817,7 +817,7 @@ export default function TrackerPage() {
                                         ].map((item) => (
                                           <div
                                             key={item.label}
-                                            className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                                            className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3"
                                           >
                                             <div className="text-[10px] uppercase tracking-[0.22em] text-white/30">
                                               {item.label}
@@ -830,14 +830,14 @@ export default function TrackerPage() {
                                       </div>
 
                                       {client.notes && (
-                                        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-white/65">
+                                        <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-sm text-white/65">
                                           {client.notes}
                                         </div>
                                       )}
                                     </div>
 
                                     <div className="space-y-3">
-                                      <div className="rounded-2xl border border-white/10 bg-[#141418] p-4">
+                                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#141418] p-4">
                                         <div className="mb-3 text-xs uppercase tracking-[0.24em] text-white/30">
                                           Integrations
                                         </div>
@@ -845,7 +845,7 @@ export default function TrackerPage() {
                                           {integrations.map((item) => (
                                             <div
                                               key={item.label}
-                                              className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                                              className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3"
                                             >
                                               <div className="text-sm font-semibold text-white">
                                                 {item.label}
@@ -865,7 +865,7 @@ export default function TrackerPage() {
                                         </div>
                                       </div>
 
-                                      <div className="rounded-2xl border border-white/10 bg-[#141418] p-4">
+                                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#141418] p-4">
                                         <div className="mb-3 text-xs uppercase tracking-[0.24em] text-red-300">
                                           Flags
                                         </div>
@@ -880,14 +880,14 @@ export default function TrackerPage() {
                                               </div>
                                             ))
                                           ) : (
-                                            <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/40">
+                                            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm text-white/40">
                                               No active flags.
                                             </div>
                                           )}
                                         </div>
                                       </div>
 
-                                      <div className="rounded-2xl border border-white/10 bg-[#141418] p-4">
+                                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#141418] p-4">
                                         <div className="mb-3 text-xs uppercase tracking-[0.24em] text-emerald-300">
                                           Wins
                                         </div>
@@ -910,7 +910,7 @@ export default function TrackerPage() {
                                               ))}
                                             </>
                                           ) : (
-                                            <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/40">
+                                            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm text-white/40">
                                               No wins recorded yet.
                                             </div>
                                           )}
@@ -932,8 +932,8 @@ export default function TrackerPage() {
           </section>
 
           <aside className="space-y-4">
-            <Card className="border-white/10 bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-              <CardHeader className="border-b border-white/10 pb-4">
+            <Card className="border-white/[0.06] bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+              <CardHeader className="border-b border-white/[0.06] pb-4">
                 <CardTitle className="text-lg text-white">Red flags</CardTitle>
                 <CardDescription className="text-white/40">
                   Aggregated risks from the current portfolio slice.
@@ -944,7 +944,7 @@ export default function TrackerPage() {
                   flagItems.slice(0, 10).map((item, index) => (
                     <div
                       key={`${item.client.id}-${item.label}-${index}`}
-                      className="rounded-2xl border border-red-500/15 bg-red-500/8 p-3"
+                      className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-red-500/15 bg-red-500/8 p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -970,15 +970,15 @@ export default function TrackerPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/45">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4 text-sm text-white/45">
                     No active red flags in this view.
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="border-white/10 bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-              <CardHeader className="border-b border-white/10 pb-4">
+            <Card className="border-white/[0.06] bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+              <CardHeader className="border-b border-white/[0.06] pb-4">
                 <CardTitle className="text-lg text-white">Wins</CardTitle>
                 <CardDescription className="text-white/40">
                   Positive signals and high-performing accounts.
@@ -989,7 +989,7 @@ export default function TrackerPage() {
                   winItems.slice(0, 10).map((item, index) => (
                     <div
                       key={`${item.client.id}-${item.label}-${index}`}
-                      className="rounded-2xl border border-emerald-500/15 bg-emerald-500/8 p-3"
+                      className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-emerald-500/15 bg-emerald-500/8 p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1010,15 +1010,15 @@ export default function TrackerPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/45">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4 text-sm text-white/45">
                     No wins recorded in this view.
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="border-white/10 bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-              <CardHeader className="border-b border-white/10 pb-4">
+            <Card className="border-white/[0.06] bg-[#17171b] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+              <CardHeader className="border-b border-white/[0.06] pb-4">
                 <CardTitle className="text-lg text-white">Export snapshot</CardTitle>
                 <CardDescription className="text-white/40">
                   Download the current filtered view for reporting or follow-up.
@@ -1029,19 +1029,19 @@ export default function TrackerPage() {
                   <Button
                     onClick={exportCurrentCsv}
                     variant="outline"
-                    className="border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                    className="border-white/[0.06] bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
                   >
                     CSV
                   </Button>
                   <Button
                     onClick={exportSnapshotJson}
                     variant="outline"
-                    className="border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                    className="border-white/[0.06] bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
                   >
                     JSON
                   </Button>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/45">
+                <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4 text-sm text-white/45">
                   {visibleClients.length} visible account
                   {visibleClients.length === 1 ? "" : "s"} in the current view.
                 </div>

@@ -314,7 +314,7 @@ export default function WorkspacePage() {
         className="bg-red-500/5 rounded-2xl p-8 max-w-sm text-center">
         <p className="text-red-400 font-semibold mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>Erreur</p>
         <p className="text-gray-500 text-sm">{clientError || 'Client introuvable'}</p>
-        <a href="/dashboard/clients" className="inline-block mt-4 text-[#E8912D] text-sm hover:underline">← Retour</a>
+        <a href="/clients" className="inline-block mt-4 text-[#E8912D] text-sm hover:underline">← Retour</a>
       </motion.div>
     </div>
   );
@@ -334,7 +334,7 @@ export default function WorkspacePage() {
         <div className="max-w-5xl mx-auto px-6 pt-5 pb-0">
           <div className="flex items-end justify-between mb-5">
             <div>
-              <a href="/dashboard/clients" className="text-gray-600 text-xs hover:text-gray-400 transition-colors">← Clients</a>
+              <a href="/clients" className="text-gray-600 text-xs hover:text-gray-400 transition-colors">← Clients</a>
               <h1 className="text-2xl font-bold mt-1 tracking-tight">{client.name}</h1>
               <p className="text-sm text-gray-600 mt-0.5">{client.industry || 'Industrie non définie'}</p>
             </div>

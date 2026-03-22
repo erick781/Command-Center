@@ -603,7 +603,7 @@ export default function RapportsPage() {
                   { label: "Campagnes actives", value: summary.activeCampaigns || "—" },
                   { label: "Rapports sauvegardés", value: recentReports.length || "—" },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+                  <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.03] p-4">
                     <div className="text-[10px] uppercase tracking-[0.28em] text-white/32">{item.label}</div>
                     <div className="mt-2 text-2xl font-bold text-white">{item.value}</div>
                   </div>
@@ -619,7 +619,7 @@ export default function RapportsPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
                   <div className="text-[10px] uppercase tracking-[0.28em] text-white/30">Client</div>
                   <div className="mt-2 text-lg font-semibold text-white">{selectedClient?.name ?? "Aucun client sélectionné"}</div>
                   <div className="mt-1 text-xs text-white/45">
@@ -634,7 +634,7 @@ export default function RapportsPage() {
                     { label: "ROAS", value: `${formatNumber(summary.roas, 1)}x` },
                     { label: "Retainer", value: selectedClient?.retainer_monthly ? formatMoney(selectedClient.retainer_monthly) : "—" },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+                    <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-3">
                       <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
                       <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
                     </div>
@@ -652,7 +652,7 @@ export default function RapportsPage() {
                     onClick={openCurrentReport}
                     disabled={!openReport}
                     variant="outline"
-                    className="border-white/10 text-white/60 hover:bg-white/[0.05]"
+                    className="border-white/[0.06] text-white/60 hover:bg-white/[0.05]"
                   >
                     Open report
                   </Button>
@@ -660,7 +660,7 @@ export default function RapportsPage() {
                     onClick={downloadCurrentReport}
                     disabled={!openReport}
                     variant="outline"
-                    className="border-white/10 text-white/60 hover:bg-white/[0.05]"
+                    className="border-white/[0.06] text-white/60 hover:bg-white/[0.05]"
                   >
                     Download HTML
                   </Button>
@@ -694,7 +694,7 @@ export default function RapportsPage() {
                       className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/25"
                     />
                     {showClientPicker && search.trim() && (
-                      <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-2xl border border-white/[0.08] bg-[#111113] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+                      <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#111113] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
                         {filteredClients.length > 0 ? (
                           filteredClients.map((client) => {
                             const clientCampaigns = defaultCampaigns(client);
@@ -732,7 +732,7 @@ export default function RapportsPage() {
                     <select
                       value={reportType}
                       onChange={(event) => setReportType(event.target.value)}
-                      className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white outline-none"
+                      className="w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white outline-none"
                     >
                       {REPORT_TYPES.map((type) => (
                         <option key={type.value} value={type.value}>
@@ -757,7 +757,7 @@ export default function RapportsPage() {
                         onClick={() => setPeriod(item.value)}
                         variant={period === item.value ? "default" : "outline"}
                         size="sm"
-                        className={period === item.value ? "bg-[#E8912D] text-white" : "border-white/10 text-white/55 hover:bg-white/[0.05]"}
+                        className={period === item.value ? "bg-[#E8912D] text-white" : "border-white/[0.06] text-white/55 hover:bg-white/[0.05]"}
                       >
                         {item.label}
                       </Button>
@@ -802,7 +802,7 @@ export default function RapportsPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/35">
+                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/35">
                       No campaign metadata is available for this client yet. The report can still be generated from the client-level context.
                     </div>
                   )}
@@ -820,7 +820,7 @@ export default function RapportsPage() {
                 </div>
 
                 {reportError && (
-                  <div className="rounded-2xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-200">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-200">
                     {reportError}
                   </div>
                 )}
@@ -837,7 +837,7 @@ export default function RapportsPage() {
                     onClick={openCurrentReport}
                     disabled={!openReport}
                     variant="outline"
-                    className="border-white/10 text-white/55 hover:bg-white/[0.05]"
+                    className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
                   >
                     Open report
                   </Button>
@@ -845,7 +845,7 @@ export default function RapportsPage() {
                     onClick={downloadCurrentReport}
                     disabled={!openReport}
                     variant="outline"
-                    className="border-white/10 text-white/55 hover:bg-white/[0.05]"
+                    className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
                   >
                     Download HTML
                   </Button>
@@ -858,7 +858,7 @@ export default function RapportsPage() {
                       setReportError("");
                     }}
                     variant="outline"
-                    className="border-white/10 text-white/35 hover:bg-white/[0.05]"
+                    className="border-white/[0.06] text-white/35 hover:bg-white/[0.05]"
                   >
                     Reset
                   </Button>
@@ -876,7 +876,7 @@ export default function RapportsPage() {
               <CardContent>
                 {openReport ? (
                   <div className="space-y-5">
-                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge className="border-[#E8912D]/20 bg-[#E8912D]/12 text-[#f4c87d]">
                           {reportTypeMeta.label}
@@ -902,24 +902,24 @@ export default function RapportsPage() {
                         { label: "Active", value: summary.activeCampaigns },
                         { label: "Spend", value: formatMoney(summary.spend) },
                       ].map((item) => (
-                        <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                        <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
                           <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
                           <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
                         </div>
                       ))}
                     </div>
-                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
                       <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/32">
                         Recommendations
                       </div>
                       <div
-                        className="mt-3 text-sm leading-7 text-white/70 [&>h1]:text-2xl [&>h1]:font-extrabold [&>h1]:text-[#E8912D] [&>h1]:mt-6 [&>h1]:mb-3 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[#E8912D] [&>h2]:mt-5 [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-white/90 [&>h3]:mt-4 [&>h3]:mb-2 [&>h4]:text-sm [&>h4]:font-bold [&>h4]:text-white/80 [&>h4]:mt-3 [&>h4]:mb-1 [&>h4]:uppercase [&>h4]:tracking-wider [&_strong]:text-white/95 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:my-2 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:my-2 [&_li]:mb-1 [&>hr]:border-white/10 [&>hr]:my-5"
+                        className="mt-3 text-sm leading-7 text-white/70 [&>h1]:text-2xl [&>h1]:font-extrabold [&>h1]:text-[#E8912D] [&>h1]:mt-6 [&>h1]:mb-3 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[#E8912D] [&>h2]:mt-5 [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-white/90 [&>h3]:mt-4 [&>h3]:mb-2 [&>h4]:text-sm [&>h4]:font-bold [&>h4]:text-white/80 [&>h4]:mt-3 [&>h4]:mb-1 [&>h4]:uppercase [&>h4]:tracking-wider [&_strong]:text-white/95 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:my-2 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:my-2 [&_li]:mb-1 [&>hr]:border-white/[0.06] [&>hr]:my-5"
                         dangerouslySetInnerHTML={{ __html: mdToHtml(reportText) }}
                       />
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] p-8 text-center text-sm text-white/30">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-8 text-center text-sm text-white/30">
                     Generate a report to see the preview here.
                   </div>
                 )}
@@ -935,7 +935,7 @@ export default function RapportsPage() {
               <CardContent className="space-y-3">
                 {selectedClient ? (
                   <>
-                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
                       <div className="text-lg font-semibold text-white">{selectedClient.name}</div>
                       <div className="mt-1 text-xs text-white/42">
                         {selectedClient.industry || "No industry"}{selectedClient.website ? ` · ${selectedClient.website}` : ""}
@@ -961,14 +961,14 @@ export default function RapportsPage() {
                         { label: "ROAS", value: `${formatNumber(summary.roas, 1)}x` },
                         { label: "Retainer", value: selectedClient.retainer_monthly ? formatMoney(selectedClient.retainer_monthly) : "—" },
                       ].map((item) => (
-                        <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+                        <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-3">
                           <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
                           <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
                         </div>
                       ))}
                     </div>
                     {summary.flags.length > 0 && (
-                      <div className="rounded-2xl border border-red-500/20 bg-red-500/8 p-4">
+                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-red-500/20 bg-red-500/8 p-4">
                         <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-red-200">
                           Active flags
                         </div>
@@ -983,7 +983,7 @@ export default function RapportsPage() {
                     )}
                   </>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
                     Search and select a client to pull in their live report context.
                   </div>
                 )}
@@ -1000,7 +1000,7 @@ export default function RapportsPage() {
                   recentReports.map((report) => (
                     <div
                       key={report.id}
-                      className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4"
+                      className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1031,7 +1031,7 @@ export default function RapportsPage() {
                           }}
                           size="sm"
                           variant="outline"
-                          className="border-white/10 text-white/55 hover:bg-white/[0.05]"
+                          className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
                         >
                           Download
                         </Button>
@@ -1039,7 +1039,7 @@ export default function RapportsPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
+                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
                     No recent reports yet. Generate one and it will appear here.
                   </div>
                 )}
