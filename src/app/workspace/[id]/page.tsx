@@ -2,31 +2,28 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { mdToHtml, buildPrintableHtml } from '@/lib/render-deliverable';
+import { BentoGrid } from '@/components/ui/bento-grid';
 
 // ─── ENV ────────────────────────────────────────────────────────────────
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// ─── HELPERS ────────────────────────────────────────────────────────────
+// ─── ANIMATION VARIANTS ────────────────────────────────────────────────
+const fadeIn = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 } };
+const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
+const cardHover = { rest: { scale: 1 }, hover: { scale: 1.015, transition: { duration: 0.2 } } };
 
-/** Supabase REST wrapper */
+// ─── HELPERS ────────────────────────────────────────────────────────────
 async function supaRest(method: string, path: string, body?: any) {
   const headers: Record<string, string> = {
-    apikey: SUPA_KEY,
-    Authorization: `Bearer ${SUPA_KEY}`,
-    'Content-Type': 'application/json',
+    apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json',
   };
   if (method === 'POST') headers['Prefer'] = 'return=representation';
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return res;
+  return fetch(`${SUPA_URL}/rest/v1/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
 }
 
-/** Consume a streaming Response body into a single string */
 async function readStream(res: Response): Promise<string> {
   const reader = res.body?.getReader();
   if (!reader) return '';
@@ -40,7 +37,6 @@ async function readStream(res: Response): Promise<string> {
   return text;
 }
 
-/** Open deliverable in styled popup using shared renderer */
 function openPrintable(title: string, markdown: string, clientName: string, deliverableType?: string) {
   const date = new Date().toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
   const html = buildPrintableHtml(markdown, title, clientName, date, deliverableType);
@@ -48,8 +44,7 @@ function openPrintable(title: string, markdown: string, clientName: string, deli
   if (w) { w.document.write(html); w.document.close(); }
 }
 
-// ─── DELIVERABLE TYPE DEFINITIONS ───────────────────────────────────────
-
+// ─── DELIVERABLE TYPES ─────────────────────────────────────────────────
 interface Field { key: string; label: string; type: 'text' | 'textarea' | 'select'; options?: string[] }
 interface DeliverableType { id: string; label: string; desc: string; icon: string; fields: Field[] }
 
@@ -68,7 +63,6 @@ const DELIVERABLE_TYPES: DeliverableType[] = [
 ];
 
 // ─── CONTENT GENERATION ─────────────────────────────────────────────────
-
 interface ClientData {
   id: string; name: string; industry?: string; status?: string;
   health_score?: number; meta_data?: any; retainer_monthly?: number;
@@ -80,11 +74,9 @@ async function generateContent(
   const clientName = client.name;
   const industry = client.industry || 'Non défini';
 
-  // ── Strategy → FastAPI (no auth cookies needed) ──
   if (type === 'strategie_360') {
     const res = await fetch('/api/strategy/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         client_name: clientName, industry,
         strategy_type: inputs.strategy_type || 'strategie_360',
@@ -102,7 +94,6 @@ async function generateContent(
       .join('\n\n---\n\n');
   }
 
-  // ── Reports → Next.js streaming (needs credentials) ──
   if (type.startsWith('rapport_')) {
     const typeMap: Record<string,string> = {
       rapport_leadgen: 'leadgen', rapport_ecommerce: 'ecommerce', rapport_coaching: 'coach',
@@ -110,11 +101,7 @@ async function generateContent(
     const res = await fetch('/api/recommendations', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client: clientName,
-        reportType: typeMap[type] || 'leadgen',
-        context: inputs.notes || '',
-      }),
+      body: JSON.stringify({ client: clientName, reportType: typeMap[type] || 'leadgen', context: inputs.notes || '' }),
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
@@ -123,13 +110,11 @@ async function generateContent(
     return await readStream(res);
   }
 
-  // ── Diagnostic / Brief / Résumé → Next.js chat streaming ──
   const systemPrompts: Record<string,string> = {
     diagnostic: `Tu es un expert en diagnostic marketing. Analyse le problème décrit pour ${clientName} (${industry}). Fournis un diagnostic structuré avec causes possibles, impact, et recommandations d'action prioritaires.`,
     brief_creatif: `Tu es un directeur créatif senior. Crée un brief créatif professionnel pour ${clientName} (${industry}). Inclus: objectifs, audience cible, ton et style, messages clés, formats recommandés, et inspirations.`,
     resume_client: `Tu es un account manager senior. Crée un résumé exécutif complet pour ${clientName} (${industry}). Inclus: situation actuelle, performances clés, enjeux principaux, opportunités, et prochaines étapes recommandées.`,
   };
-
   const userMessage = type === 'diagnostic'
     ? `Diagnostique ce problème pour ${clientName}: ${inputs.problem || 'Analyse générale'}`
     : type === 'brief_creatif'
@@ -139,10 +124,7 @@ async function generateContent(
   const res = await fetch('/api/chat', {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system: systemPrompts[type] || systemPrompts.diagnostic,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
+    body: JSON.stringify({ system: systemPrompts[type] || systemPrompts.diagnostic, messages: [{ role: 'user', content: userMessage }] }),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
@@ -151,33 +133,89 @@ async function generateContent(
   return await readStream(res);
 }
 
-// ─── MAIN COMPONENT ─────────────────────────────────────────────────────
 
+// ─── REUSABLE UI COMPONENTS ─────────────────────────────────────────────
+
+function KpiCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <motion.div
+      variants={cardHover} initial="rest" whileHover="hover"
+      className="group relative overflow-hidden rounded-2xl bg-[#1a1a1f] p-6 cursor-default
+        transition-colors duration-200 hover:bg-[#1f1f25]"
+    >
+      <div className="absolute inset-0 rounded-2xl border border-white/[0.04] group-hover:border-[#E8912D]/20 transition-colors duration-300" />
+      <p className="text-xs tracking-wide text-gray-500 uppercase mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>{label}</p>
+      <p className={`text-2xl font-bold ${accent ? 'text-[#E8912D]' : 'text-white'}`} style={{ fontFamily: 'Arial, sans-serif' }}>
+        {value}
+      </p>
+    </motion.div>
+  );
+}
+
+function DeliverableCard({ dt, selected, onClick }: { dt: DeliverableType; selected: boolean; onClick: () => void }) {
+  return (
+    <motion.button
+      variants={cardHover} initial="rest" whileHover="hover"
+      onClick={onClick}
+      className={`w-full text-left rounded-2xl p-5 transition-all duration-200 relative overflow-hidden ${
+        selected
+          ? 'bg-[#E8912D]/8 ring-1 ring-[#E8912D]/40'
+          : 'bg-[#1a1a1f] hover:bg-[#1f1f25]'
+      }`}
+    >
+      {!selected && <div className="absolute inset-0 rounded-2xl border border-white/[0.04] group-hover:border-white/10 transition-colors" />}
+      <div className="flex items-start gap-4">
+        <span className="text-2xl mt-0.5">{dt.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm text-white" style={{ fontFamily: 'Arial, sans-serif' }}>{dt.label}</p>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed">{dt.desc}</p>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+function HistoryItem({ h, onShow, onOpen }: { h: any; onShow: () => void; onOpen: () => void }) {
+  return (
+    <motion.div variants={fadeIn}
+      className="flex items-center justify-between py-3 group"
+    >
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="w-1.5 h-1.5 rounded-full bg-[#E8912D] shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-white truncate" style={{ fontFamily: 'Arial, sans-serif' }}>{h.title}</p>
+          <p className="text-xs text-gray-600 mt-0.5">{new Date(h.created_at).toLocaleDateString('fr-CA')}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button onClick={onShow} className="text-xs text-gray-400 hover:text-white transition-colors">Afficher</button>
+        <button onClick={onOpen} className="text-xs text-[#E8912D] hover:text-[#f0a040] transition-colors">Ouvrir</button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── MAIN COMPONENT ─────────────────────────────────────────────────────
 export default function WorkspacePage() {
   const params = useParams();
   const clientId = params?.id as string;
 
-  // ── State ──
   const [client, setClient] = useState<ClientData | null>(null);
   const [loadingClient, setLoadingClient] = useState(true);
   const [clientError, setClientError] = useState('');
-
   const [tab, setTab] = useState<'overview' | 'deliverables' | 'context'>('overview');
-
   const [selectedType, setSelectedType] = useState<string>('');
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [output, setOutput] = useState('');
   const [genError, setGenError] = useState('');
-
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
 
-  // ── Load client on mount ──
+  // ── Load client ──
   useEffect(() => {
     if (!clientId) return;
     setLoadingClient(true);
@@ -185,7 +223,7 @@ export default function WorkspacePage() {
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((clients: ClientData[]) => {
         const found = clients.find((c: ClientData) => c.id === clientId);
-        if (!found) throw new Error('Client introuvable dans la liste');
+        if (!found) throw new Error('Client introuvable');
         setClient(found);
         setNotes(found.meta_data?.notes || '');
       })
@@ -193,26 +231,22 @@ export default function WorkspacePage() {
       .finally(() => setLoadingClient(false));
   }, [clientId]);
 
-  // ── Load deliverable history from Supabase ──
+  // ── Load history ──
   const loadHistory = useCallback(async () => {
     if (!clientId) return;
     setLoadingHistory(true);
     try {
-      const res = await supaRest('GET',
-        `client_deliverables?client_id=eq.${clientId}&order=created_at.desc&limit=20`);
+      const res = await supaRest('GET', `client_deliverables?client_id=eq.${clientId}&order=created_at.desc&limit=20`);
       if (res.ok) setHistory(await res.json());
-    } catch (_) { /* silent */ }
+    } catch (_) {}
     setLoadingHistory(false);
   }, [clientId]);
-
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
-  // ── Generate handler ──
+  // ── Generate ──
   const handleGenerate = async () => {
     if (!client || !selectedType) return;
-    setGenerating(true);
-    setGenError('');
-    setOutput('');
+    setGenerating(true); setGenError(''); setOutput('');
     const typeDef = DELIVERABLE_TYPES.find(d => d.id === selectedType);
     setGenStatus(`Génération "${typeDef?.label}" en cours…`);
     try {
@@ -220,23 +254,17 @@ export default function WorkspacePage() {
       const content = await generateContent(selectedType, client, allInputs);
       setOutput(content);
       setGenStatus('Sauvegarde…');
-
-      // Save to Supabase
       await supaRest('POST', 'client_deliverables', {
-        client_id: clientId,
-        type: selectedType,
-        title: `${typeDef?.label} — ${client.name}`,
-        content,
+        client_id: clientId, type: selectedType,
+        title: `${typeDef?.label} — ${client.name}`, content,
         metadata: { inputs: allInputs, generated_at: new Date().toISOString() },
       });
       setGenStatus('');
-      loadHistory(); // refresh timeline
+      loadHistory();
     } catch (e: any) {
       setGenError(e.message || 'Erreur inconnue');
       setGenStatus('');
-    } finally {
-      setGenerating(false);
-    }
+    } finally { setGenerating(false); }
   };
 
   // ── Save notes ──
@@ -244,377 +272,339 @@ export default function WorkspacePage() {
     if (!client) return;
     setSavingNotes(true);
     try {
-      // Update via client-hub if available, otherwise store in Supabase
       const meta = { ...(client.meta_data || {}), notes };
-      await supaRest('PATCH',
-        `client_hub_clients?id=eq.${clientId}`,
-        { meta_data: meta });
+      await supaRest('PATCH', `client_hub_clients?id=eq.${clientId}`, { meta_data: meta });
       setClient({ ...client, meta_data: meta });
-    } catch (_) { /* best effort */ }
+    } catch (_) {}
     setSavingNotes(false);
   };
 
-
+  // ── Export DOCX ──
   const downloadDocx = async () => {
     if (!output || !client || !selectedType) return;
     try {
       const res = await fetch('/api/deliverable/export-docx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: selectedType,
-          client_name: client.name,
-          industry: client.industry || '',
-          content: output,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: selectedType, client_name: client.name, industry: client.industry || '', content: output }),
       });
       if (!res.ok) throw new Error('Erreur export DOCX');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = selectedType + '_' + client.name.replace(/ /g, '_') + '.docx';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = `${selectedType}_${client.name.replace(/ /g, '_')}.docx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (e) {
-      alert('Erreur DOCX: ' + (e instanceof Error ? e.message : 'Erreur inconnue'));
-    }
+    } catch (e) { alert('Erreur DOCX: ' + (e instanceof Error ? e.message : 'Erreur')); }
   };
 
+  // ─── RENDER ────────────────────────────────────────────────────────────
 
-  // ─── RENDER ───────────────────────────────────────────────────────────
-
-  // Loading / Error states
-  if (loadingClient) 
-
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="text-center">
+  if (loadingClient) return (
+    <div className="min-h-screen bg-[#0f0f12] flex items-center justify-center">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
         <div className="w-8 h-8 border-2 border-[#E8912D] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-400">Chargement du client…</p>
-      </div>
+        <p className="text-gray-500 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>Chargement…</p>
+      </motion.div>
     </div>
   );
 
   if (clientError || !client) return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 max-w-md text-center">
-        <p className="text-red-400 text-lg font-semibold mb-2">Erreur</p>
-        <p className="text-gray-400">{clientError || 'Client introuvable'}</p>
-        <a href="/dashboard/clients" className="inline-block mt-4 text-[#E8912D] hover:underline text-sm">
-          ← Retour aux clients
-        </a>
-      </div>
+    <div className="min-h-screen bg-[#0f0f12] flex items-center justify-center">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-red-500/5 rounded-2xl p-8 max-w-sm text-center">
+        <p className="text-red-400 font-semibold mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>Erreur</p>
+        <p className="text-gray-500 text-sm">{clientError || 'Client introuvable'}</p>
+        <a href="/dashboard/clients" className="inline-block mt-4 text-[#E8912D] text-sm hover:underline">← Retour</a>
+      </motion.div>
     </div>
   );
 
   const typeDef = DELIVERABLE_TYPES.find(d => d.id === selectedType);
+  const tabs = [
+    { key: 'overview' as const, label: "Vue d'ensemble" },
+    { key: 'deliverables' as const, label: 'Livrables' },
+    { key: 'context' as const, label: 'Contexte' },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* ── Header ── */}
-      <div className="border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <a href="/dashboard/clients" className="text-gray-500 text-xs hover:text-gray-300 mb-1 inline-block">
-              ← Clients
-            </a>
-            <h1 className="text-xl font-bold">{client.name}</h1>
-            <p className="text-sm text-gray-500">{client.industry || 'Industrie non définie'}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {client.health_score != null && (
-              <div className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                client.health_score >= 75 ? 'bg-green-500/20 text-green-400' :
-                client.health_score >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-red-500/20 text-red-400'
-              }`}>
-                Score: {client.health_score}
-              </div>
-            )}
-            {client.status && (
-              <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#E8912D]/20 text-[#E8912D]">
-                {client.status}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0f0f12] text-white" style={{ fontFamily: 'Arial, sans-serif' }}>
 
-        {/* ── Tabs ── */}
-        <div className="max-w-6xl mx-auto px-6 flex gap-1">
-          {([
-            ['overview', "Vue d'ensemble"],
-            ['deliverables', 'Livrables'],
-            ['context', 'Contexte'],
-          ] as const).map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                tab === key
-                  ? 'border-[#E8912D] text-[#E8912D]'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+      {/* ── Header — clean, minimal ── */}
+      <div className="sticky top-0 z-10 bg-[#0f0f12]/90 backdrop-blur-xl border-b border-white/[0.04]">
+        <div className="max-w-5xl mx-auto px-6 pt-5 pb-0">
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <a href="/dashboard/clients" className="text-gray-600 text-xs hover:text-gray-400 transition-colors">← Clients</a>
+              <h1 className="text-2xl font-bold mt-1 tracking-tight">{client.name}</h1>
+              <p className="text-sm text-gray-600 mt-0.5">{client.industry || 'Industrie non définie'}</p>
+            </div>
+            <div className="flex items-center gap-2 pb-1">
+              {client.health_score != null && (
+                <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                  client.health_score >= 75 ? 'bg-emerald-500/10 text-emerald-400' :
+                  client.health_score >= 50 ? 'bg-amber-500/10 text-amber-400' :
+                  'bg-red-500/10 text-red-400'
+                }`}>{client.health_score}/100</span>
+              )}
+              {client.status && (
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#E8912D]/10 text-[#E8912D]">{client.status}</span>
+              )}
+            </div>
+          </div>
+
+          {/* ── Tabs — simple underline style ── */}
+          <div className="flex gap-6">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`pb-3 text-sm font-medium transition-all relative ${
+                  tab === t.key ? 'text-white' : 'text-gray-600 hover:text-gray-400'
+                }`}>
+                {t.label}
+                {tab === t.key && (
+                  <motion.div layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E8912D] rounded-full"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* ── Tab Content ── */}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <AnimatePresence mode="wait">
 
-        {/* ════════════ TAB: VUE D'ENSEMBLE ════════════ */}
-        {tab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Stats cards */}
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-              {[
-                { label: 'Retainer mensuel', value: client.retainer_monthly ? `${client.retainer_monthly.toLocaleString()} $` : '—' },
-                { label: 'Score santé', value: client.health_score != null ? `${client.health_score}/100` : '—' },
-                { label: 'Statut', value: client.status || '—' },
-                { label: 'Industrie', value: client.industry || '—' },
-              ].map((s, i) => (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-                  <p className="text-lg font-semibold text-white">{s.value}</p>
+          {/* ════════════ OVERVIEW ════════════ */}
+          {tab === 'overview' && (
+            <motion.div key="overview" {...fadeIn} transition={{ duration: 0.25 }} className="space-y-8">
+
+              {/* Bento KPI Grid */}
+              <BentoGrid className="grid-cols-2 lg:grid-cols-4 auto-rows-auto gap-4">
+                <KpiCard label="Retainer mensuel" value={client.retainer_monthly ? `${client.retainer_monthly.toLocaleString()} $` : '—'} accent />
+                <KpiCard label="Score santé" value={client.health_score != null ? `${client.health_score}/100` : '—'} />
+                <KpiCard label="Statut" value={client.status || '—'} />
+                <KpiCard label="Industrie" value={client.industry || '—'} />
+              </BentoGrid>
+
+              {/* Quick Actions — 2-col grid */}
+              <div>
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">Actions rapides</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {DELIVERABLE_TYPES.slice(0, 4).map(dt => (
+                    <motion.button key={dt.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => { setSelectedType(dt.id); setTab('deliverables'); }}
+                      className="flex items-center gap-3 rounded-2xl bg-[#1a1a1f] p-4
+                        hover:bg-[#1f1f25] transition-colors group"
+                    >
+                      <span className="text-xl">{dt.icon}</span>
+                      <span className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">{dt.label}</span>
+                    </motion.button>
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            {/* Quick actions */}
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Actions rapides</h3>
-              <div className="space-y-2">
-                {DELIVERABLE_TYPES.slice(0, 4).map(dt => (
-                  <button key={dt.id}
-                    onClick={() => { setSelectedType(dt.id); setTab('deliverables'); }}
-                    className="w-full text-left px-3 py-2 rounded-md bg-white/5 hover:bg-[#E8912D]/10 border border-white/5 hover:border-[#E8912D]/30 transition-all text-sm"
-                  >
-                    <span className="mr-2">{dt.icon}</span>{dt.label}
-                  </button>
-                ))}
               </div>
-            </div>
 
-            {/* Recent deliverables */}
-            <div className="lg:col-span-3 bg-white/5 border border-white/10 rounded-lg p-5">
-              <h3 className="text-sm font-semibold text-gray-400 mb-4">Derniers livrables</h3>
-              {history.length === 0 ? (
-                <p className="text-gray-600 text-sm">Aucun livrable généré encore.</p>
-              ) : (
-                <div className="space-y-2">
-                  {history.slice(0, 5).map((h: any) => (
-                    <div key={h.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-white/5">
-                      <div>
-                        <p className="text-sm text-white">{h.title}</p>
-                        <p className="text-xs text-gray-500">{new Date(h.created_at).toLocaleDateString('fr-CA')}</p>
-                      </div>
-                      <button onClick={() => openPrintable(h.title, h.content || '', client.name)}
-                        className="text-xs text-[#E8912D] hover:underline">Ouvrir</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ════════════ TAB: LIVRABLES ════════════ */}
-        {tab === 'deliverables' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Type selection */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-400 mb-2">Type de livrable</h3>
-              {DELIVERABLE_TYPES.map(dt => (
-                <button key={dt.id}
-                  onClick={() => { setSelectedType(dt.id); setInputs({}); setOutput(''); setGenError(''); }}
-                  className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${
-                    selectedType === dt.id
-                      ? 'bg-[#E8912D]/10 border-[#E8912D]/50 text-white'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
-                  }`}
-                >
-                  <span className="mr-2 text-lg">{dt.icon}</span>
-                  <span className="font-medium text-sm">{dt.label}</span>
-                  <p className="text-xs text-gray-500 mt-0.5 ml-7">{dt.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Right: Form + output */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Dynamic fields */}
-              {typeDef && typeDef.fields.length > 0 && (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-400">Paramètres</h3>
-                  {typeDef.fields.map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-500 mb-1">{f.label}</label>
-                      {f.type === 'select' ? (
-                        <select
-                          value={inputs[f.key] || f.options?.[0] || ''}
-                          onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
-                          className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:border-[#E8912D] focus:outline-none"
-                        >
-                          {f.options?.map(o => <option key={o} value={o} className="bg-[#1a1a1a]">{o}</option>)}
-                        </select>
-                      ) : f.type === 'textarea' ? (
-                        <textarea
-                          value={inputs[f.key] || ''}
-                          onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
-                          rows={3}
-                          className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-[#E8912D] focus:outline-none resize-none"
-                          placeholder={f.label}
-                        />
-                      ) : (
-                        <input type="text"
-                          value={inputs[f.key] || ''}
-                          onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
-                          className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-[#E8912D] focus:outline-none"
-                          placeholder={f.label}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Generate button */}
-              {selectedType && (
-                <button onClick={handleGenerate} disabled={generating}
-                  className={`w-full py-3 rounded-lg font-semibold text-sm transition-all ${
-                    generating
-                      ? 'bg-[#E8912D]/30 text-[#E8912D] cursor-wait'
-                      : 'bg-[#E8912D] text-white hover:bg-[#d07e25] active:scale-[0.98]'
-                  }`}
-                >
-                  {generating ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      {genStatus || 'Génération en cours…'}
-                    </span>
-                  ) : (
-                    `Générer ${typeDef?.label || ''}`
-                  )}
-                </button>
-              )}
-
-              {/* Error display */}
-              {genError && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                  <p className="text-red-400 text-sm font-medium">Erreur de génération</p>
-                  <p className="text-red-300/70 text-xs mt-1">{genError}</p>
-                </div>
-              )}
-
-              {/* Output */}
-              {output && (
-                <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
-                    <h3 className="text-sm font-semibold text-[#E8912D]">Résultat</h3>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => openPrintable(
-                        `${typeDef?.label} — ${client.name}`, output, client.name, typeDef?.id
-                      )} className="text-xs text-[#E8912D] hover:underline flex items-center gap-1">
-                        ↗ Ouvrir
-                      </button>
-                      <button onClick={downloadDocx}
-                        className="text-xs bg-[#E8912D] text-white px-3 py-1 rounded hover:bg-[#d17e24] flex items-center gap-1">
-                        ⬇ Télécharger DOCX
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-6 max-h-[600px] overflow-y-auto text-sm leading-relaxed"
-                    style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-                    dangerouslySetInnerHTML={{ __html: mdToHtml(output) }}
-                  />
-                </div>
-              )}
-
-              {/* History timeline */}
-              <div className="bg-white/5 border border-white/10 rounded-lg p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-400">Historique</h3>
-                  <button onClick={loadHistory} disabled={loadingHistory}
-                    className="text-xs text-gray-500 hover:text-[#E8912D]">
-                    {loadingHistory ? '…' : '↻ Rafraîchir'}
-                  </button>
-                </div>
+              {/* Recent Deliverables */}
+              <div>
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">Derniers livrables</p>
                 {history.length === 0 ? (
-                  <p className="text-gray-600 text-sm">Aucun livrable.</p>
+                  <p className="text-gray-700 text-sm py-8 text-center">Aucun livrable généré encore.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {history.map((h: any) => (
-                      <div key={h.id} className="flex items-start gap-3 group">
-                        <div className="mt-1.5 w-2 h-2 rounded-full bg-[#E8912D] shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-white truncate">{h.title}</p>
-                            <span className="text-xs text-gray-600 shrink-0 ml-2">
-                              {new Date(h.created_at).toLocaleDateString('fr-CA')}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 mt-1">
-                            <button onClick={() => { setOutput(h.content || ''); }}
-                              className="text-xs text-gray-500 hover:text-white">Afficher</button>
-                            <button onClick={() => openPrintable(h.title, h.content || '', client.name)}
-                              className="text-xs text-gray-500 hover:text-[#E8912D]">Ouvrir</button>
-                          </div>
-                        </div>
-                      </div>
+                  <motion.div variants={stagger} initial="initial" animate="animate"
+                    className="divide-y divide-white/[0.04]">
+                    {history.slice(0, 5).map((h: any) => (
+                      <HistoryItem key={h.id} h={h}
+                        onShow={() => setOutput(h.content || '')}
+                        onOpen={() => openPrintable(h.title, h.content || '', client.name)} />
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        {/* ════════════ TAB: CONTEXTE ════════════ */}
-        {tab === 'context' && (
-          <div className="max-w-2xl space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Notes & Contexte client</h3>
-              <p className="text-xs text-gray-600 mb-3">
-                Ces notes sont utilisées comme contexte lors de la génération des livrables.
-              </p>
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={12}
-                className="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-[#E8912D] focus:outline-none resize-none"
-                placeholder="Ajoutez des notes sur ce client : objectifs, problématiques, historique, KPI cibles…"
-              />
-              <button onClick={saveNotes} disabled={savingNotes}
-                className="mt-3 px-5 py-2 rounded-lg bg-[#E8912D] text-white text-sm font-medium hover:bg-[#d07e25] disabled:opacity-50 transition-all"
-              >
-                {savingNotes ? 'Sauvegarde…' : 'Sauvegarder les notes'}
-              </button>
-            </div>
+          {/* ════════════ DELIVERABLES ════════════ */}
+          {tab === 'deliverables' && (
+            <motion.div key="deliverables" {...fadeIn} transition={{ duration: 0.25 }}
+              className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
 
-            {/* Client metadata display */}
-            <div className="bg-white/5 border border-white/10 rounded-lg p-5">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Informations client</h3>
-              <dl className="space-y-2 text-sm">
-                {[
-                  ['ID', client.id],
-                  ['Nom', client.name],
-                  ['Industrie', client.industry || '—'],
-                  ['Statut', client.status || '—'],
-                  ['Score santé', client.health_score != null ? `${client.health_score}/100` : '—'],
-                  ['Retainer', client.retainer_monthly ? `${client.retainer_monthly.toLocaleString()} $/mois` : '—'],
-                ].map(([k, v]) => (
-                  <div key={k as string} className="flex justify-between">
-                    <dt className="text-gray-500">{k}</dt>
-                    <dd className="text-white">{v}</dd>
-                  </div>
+              {/* Left — Type selection */}
+              <div className="space-y-2">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-3">Type de livrable</p>
+                {DELIVERABLE_TYPES.map(dt => (
+                  <DeliverableCard key={dt.id} dt={dt} selected={selectedType === dt.id}
+                    onClick={() => { setSelectedType(dt.id); setInputs({}); setOutput(''); setGenError(''); }} />
                 ))}
-              </dl>
-            </div>
-          </div>
-        )}
+              </div>
 
+              {/* Right — Generation area */}
+              <div className="space-y-6 min-w-0">
+                <AnimatePresence mode="wait">
+                  {/* Dynamic fields */}
+                  {typeDef && typeDef.fields.length > 0 && (
+                    <motion.div key={`fields-${selectedType}`} {...fadeIn} transition={{ duration: 0.2 }}
+                      className="rounded-2xl bg-[#1a1a1f] p-6 space-y-4">
+                      <p className="text-xs text-gray-600 uppercase tracking-wide">Paramètres</p>
+                      {typeDef.fields.map(f => (
+                        <div key={f.key}>
+                          <label className="block text-xs text-gray-500 mb-1.5">{f.label}</label>
+                          {f.type === 'select' ? (
+                            <select value={inputs[f.key] || f.options?.[0] || ''}
+                              onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
+                              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-white
+                                focus:border-[#E8912D]/50 focus:outline-none transition-colors">
+                              {f.options?.map(o => <option key={o} value={o} className="bg-[#1a1a1f]">{o}</option>)}
+                            </select>
+                          ) : f.type === 'textarea' ? (
+                            <textarea value={inputs[f.key] || ''}
+                              onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
+                              rows={3}
+                              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white
+                                placeholder-gray-700 focus:border-[#E8912D]/50 focus:outline-none resize-none transition-colors"
+                              placeholder={f.label} />
+                          ) : (
+                            <input type="text" value={inputs[f.key] || ''}
+                              onChange={e => setInputs(p => ({ ...p, [f.key]: e.target.value }))}
+                              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-white
+                                placeholder-gray-700 focus:border-[#E8912D]/50 focus:outline-none transition-colors"
+                              placeholder={f.label} />
+                          )}
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Generate button — prominent, centered, orange gradient */}
+                {selectedType && (
+                  <motion.button onClick={handleGenerate} disabled={generating}
+                    whileHover={generating ? {} : { scale: 1.01 }}
+                    whileTap={generating ? {} : { scale: 0.98 }}
+                    className={`w-full py-4 rounded-2xl font-semibold text-sm tracking-wide transition-all duration-200 ${
+                      generating
+                        ? 'bg-[#E8912D]/20 text-[#E8912D]/70 cursor-wait'
+                        : 'bg-gradient-to-r from-[#E8912D] to-[#d07a1a] text-white shadow-lg shadow-[#E8912D]/10 hover:shadow-[#E8912D]/20'
+                    }`}>
+                    {generating ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <span className="w-4 h-4 border-2 border-[#E8912D]/30 border-t-[#E8912D] rounded-full animate-spin" />
+                        {genStatus || 'Génération en cours…'}
+                      </span>
+                    ) : (
+                      `Générer ${typeDef?.label || ''}`
+                    )}
+                  </motion.button>
+                )}
+
+                {/* Error */}
+                <AnimatePresence>
+                  {genError && (
+                    <motion.div {...fadeIn} transition={{ duration: 0.2 }}
+                      className="rounded-2xl bg-red-500/5 border border-red-500/10 p-5">
+                      <p className="text-red-400 text-sm font-medium">Erreur de génération</p>
+                      <p className="text-red-400/50 text-xs mt-1">{genError}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Output — smooth fade-in */}
+                <AnimatePresence>
+                  {output && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="rounded-2xl bg-[#1a1a1f] overflow-hidden">
+                      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
+                        <p className="text-sm font-semibold text-[#E8912D]">Résultat</p>
+                        <div className="flex items-center gap-4">
+                          <button onClick={() => openPrintable(
+                            `${typeDef?.label} — ${client.name}`, output, client.name, typeDef?.id
+                          )} className="text-xs text-gray-500 hover:text-[#E8912D] transition-colors">
+                            ↗ Ouvrir
+                          </button>
+                          <button onClick={downloadDocx}
+                            className="text-xs bg-[#E8912D] text-white px-4 py-1.5 rounded-lg hover:bg-[#d07a1a] transition-colors">
+                            Télécharger DOCX
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-6 max-h-[600px] overflow-y-auto text-sm leading-relaxed prose-invert"
+                        dangerouslySetInnerHTML={{ __html: mdToHtml(output) }} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* History */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-gray-600 uppercase tracking-wide">Historique</p>
+                    <button onClick={loadHistory} disabled={loadingHistory}
+                      className="text-xs text-gray-600 hover:text-[#E8912D] transition-colors">
+                      {loadingHistory ? '…' : '↻ Rafraîchir'}
+                    </button>
+                  </div>
+                  {history.length === 0 ? (
+                    <p className="text-gray-700 text-sm py-6 text-center">Aucun livrable.</p>
+                  ) : (
+                    <motion.div variants={stagger} initial="initial" animate="animate"
+                      className="divide-y divide-white/[0.04]">
+                      {history.map((h: any) => (
+                        <HistoryItem key={h.id} h={h}
+                          onShow={() => setOutput(h.content || '')}
+                          onOpen={() => openPrintable(h.title, h.content || '', client.name)} />
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
+          {/* ════════════ CONTEXT ════════════ */}
+          {tab === 'context' && (
+            <motion.div key="context" {...fadeIn} transition={{ duration: 0.25 }}
+              className="max-w-2xl mx-auto space-y-6">
+
+              {/* Notes */}
+              <div className="rounded-2xl bg-[#1a1a1f] p-6">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Notes & Contexte</p>
+                <p className="text-xs text-gray-700 mb-4">Utilisées comme contexte lors de la génération.</p>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={10}
+                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3
+                    text-sm text-white placeholder-gray-700 focus:border-[#E8912D]/50 focus:outline-none
+                    resize-none transition-colors"
+                  placeholder="Objectifs, problématiques, historique, KPI cibles…" />
+                <motion.button onClick={saveNotes} disabled={savingNotes}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                  className="mt-4 px-6 py-2.5 rounded-xl bg-[#E8912D] text-white text-sm font-medium
+                    hover:bg-[#d07a1a] disabled:opacity-40 transition-all">
+                  {savingNotes ? 'Sauvegarde…' : 'Sauvegarder'}
+                </motion.button>
+              </div>
+
+              {/* Client info */}
+              <div className="rounded-2xl bg-[#1a1a1f] p-6">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">Informations client</p>
+                <dl className="space-y-3 text-sm">
+                  {([
+                    ['Nom', client.name],
+                    ['Industrie', client.industry || '—'],
+                    ['Statut', client.status || '—'],
+                    ['Score santé', client.health_score != null ? `${client.health_score}/100` : '—'],
+                    ['Retainer', client.retainer_monthly ? `${client.retainer_monthly.toLocaleString()} $/mois` : '—'],
+                  ] as const).map(([k, v]) => (
+                    <div key={k} className="flex justify-between items-center">
+                      <dt className="text-gray-600">{k}</dt>
+                      <dd className="text-white font-medium">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
     </div>
   );
