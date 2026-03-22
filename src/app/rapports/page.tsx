@@ -689,7 +689,7 @@ export default function RapportsPage() {
           )}
 
           {/* ── DATA DISPLAY: Real KPIs + Campaign table ── */}
-          {showData && !reportContent && (
+          {showData && (
             <motion.div key="data-display" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
               {(() => {
                 const meta = selectedClient?.meta_data as MetaData | null | undefined;

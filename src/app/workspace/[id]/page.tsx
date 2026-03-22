@@ -288,7 +288,7 @@ export default function WorkspacePage() {
     setSavingNotes(true);
     try {
       const meta = { ...(client.meta_data || {}), notes };
-      await supaRest('PATCH', `client_hub_clients?id=eq.${clientId}`, { meta_data: meta });
+      await supaRest('PATCH', `clients?id=eq.${clientId}`, { meta_data: meta });
       setClient({ ...client, meta_data: meta });
     } catch (_) {}
     setSavingNotes(false);
