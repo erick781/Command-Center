@@ -264,6 +264,8 @@ export default function RapportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showData, setShowData] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [googleAdsData, setGoogleAdsData] = useState<any>(null);
+  const [googleAdsLoading, setGoogleAdsLoading] = useState(false);
 
   const steps = ALL_STEPS;
   const currentStepId = steps[step] ?? "client";
@@ -362,6 +364,14 @@ export default function RapportsPage() {
       setGenProgress(100);
       setGenerating(false);
       setShowData(true);
+    // Also fetch Google Ads data for this client
+    if (selectedClient?.id) {
+      setGoogleAdsLoading(true);
+      fetch("/api/google-ads/by-client/" + selectedClient.id + "?days=" + (period || "30"), { credentials: "include" })
+        .then(r => r.json())
+        .then(d => { setGoogleAdsData(d); setGoogleAdsLoading(false); })
+        .catch(() => setGoogleAdsLoading(false));
+    }
     }, 800);
   }
 
@@ -796,6 +806,62 @@ export default function RapportsPage() {
                         })}
                       </div>
                     </div>
+
+                {/* Google Ads Data */}
+                {googleAdsLoading && (
+                  <div style={{ textAlign: "center", padding: 24, color: "rgba(255,255,255,0.45)", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
+                    {"Chargement Google Ads..."}
+                  </div>
+                )}
+                {googleAdsData?.has_google_ads && googleAdsData.kpis && (
+                  <>
+                    <h3 style={{ color: "#4285F4", fontSize: 16, fontWeight: 700, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", margin: "24px 0 12px" }}>
+                      {"Google Ads"}
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+                      {[
+                        { label: "Spend", value: "$" + (googleAdsData.kpis.spend || 0).toLocaleString() },
+                        { label: "Clics", value: String(googleAdsData.kpis.clicks || 0) },
+                        { label: "Conversions", value: (googleAdsData.kpis.conversions || 0).toFixed(1) },
+                        { label: "CPA", value: "$" + (googleAdsData.kpis.cpa || 0).toFixed(2) },
+                        { label: "ROAS", value: (googleAdsData.kpis.roas || 0).toFixed(2) + "x" },
+                        { label: "CTR", value: (googleAdsData.kpis.ctr || 0).toFixed(2) + "%" },
+                      ].map((kpi) => (
+                        <div key={kpi.label} style={{ background: "rgba(66,133,244,0.08)", borderRadius: 10, padding: "12px 14px", border: "1px solid rgba(66,133,244,0.15)" }}>
+                          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textTransform: "uppercase" as const, letterSpacing: 0.5 }}>{kpi.label}</div>
+                          <div style={{ color: "#fff", fontSize: 18, fontWeight: 700, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", marginTop: 4 }}>{kpi.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {googleAdsData.campaigns && googleAdsData.campaigns.filter((c: any) => c.spend > 0).length > 0 && (
+                      <div style={{ overflowX: "auto", marginTop: 16 }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 13 }}>
+                          <thead>
+                            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                              <th style={{ textAlign: "left", padding: "8px 12px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{"Campagne"}</th>
+                              <th style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{"Spend"}</th>
+                              <th style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{"Clics"}</th>
+                              <th style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{"Conv."}</th>
+                              <th style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{"CPA"}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {googleAdsData.campaigns.filter((c: any) => c.spend > 0).map((camp: any, i: number) => (
+                              <tr key={camp.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                                <td style={{ padding: "8px 12px", color: "#fff" }}>{camp.name}</td>
+                                <td style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.75)" }}>{"$"}{camp.spend.toLocaleString()}</td>
+                                <td style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.75)" }}>{camp.clicks}</td>
+                                <td style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.75)" }}>{camp.conversions?.toFixed(1)}</td>
+                                <td style={{ textAlign: "right", padding: "8px 12px", color: "rgba(255,255,255,0.75)" }}>{"$"}{camp.cpa?.toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+
                     <button
                       onClick={generateAiRecommendations}
                       disabled={aiLoading}
