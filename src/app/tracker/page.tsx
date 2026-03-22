@@ -562,7 +562,7 @@ export default function TrackerPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {summaryCards.map((item) => (
             <Card
               key={item.label}
@@ -841,7 +841,7 @@ export default function TrackerPage() {
                                         <div className="mb-3 text-xs uppercase tracking-[0.24em] text-white/30">
                                           Integrations
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           {integrations.map((item) => (
                                             <div
                                               key={item.label}
@@ -1025,7 +1025,7 @@ export default function TrackerPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 pt-4">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button
                     onClick={exportCurrentCsv}
                     variant="outline"

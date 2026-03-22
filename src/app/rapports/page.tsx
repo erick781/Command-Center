@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronRight, Check, Sparkles, LoaderCircle,
   Eye, FileDown, FileText, BarChart3, ShoppingCart, GraduationCap,
+  TrendingUp, DollarSign, Users, Target, Activity,
 } from "lucide-react";
 import { Nav } from "@/components/nav";
 import { mdToHtml, buildPrintableHtml } from "@/lib/render-deliverable";
@@ -31,7 +32,39 @@ type Client = {
   status?: string;
   industry?: string;
   website?: string;
-  meta_data?: Record<string, unknown> | null;
+  meta_data?: MetaData | null;
+};
+
+type Campaign = {
+  id: string;
+  name: string;
+  objective: string;
+  type: string;
+  type_label: string;
+  effective_status: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  leads: number;
+  conv_value: number;
+  purchases: number;
+  add_to_cart: number;
+  initiate_checkout: number;
+};
+
+type MetaData = {
+  spend: number;
+  leads: number;
+  cpl: number;
+  roas: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  purchases: number;
+  conv_value: number;
+  campaigns: Campaign[];
+  flags: { type: string; msg: string }[];
+  wins: { type: string; msg: string }[];
 };
 
 /* ── Step definitions ── */
@@ -224,6 +257,8 @@ export default function RapportsPage() {
   const [genProgress, setGenProgress] = useState(0);
   const [reportContent, setReportContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showData, setShowData] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const steps = ALL_STEPS;
   const currentStepId = steps[step] ?? "client";
@@ -283,22 +318,27 @@ export default function RapportsPage() {
     return lines.join("\n");
   }
 
-  /* ── Generate report ── */
+  /* ── Generate report — Step 1: show real data ── */
   async function generate() {
     if (!selectedClient || !reportType || !period) return;
     setGenerating(true);
     setGenProgress(0);
     setError(null);
     setReportContent(null);
+    setShowData(false);
+    setAiLoading(false);
+    setTimeout(() => {
+      setGenProgress(100);
+      setGenerating(false);
+      setShowData(true);
+    }, 800);
+  }
 
-    const progressInterval = setInterval(() => {
-      setGenProgress((p: number) => {
-        if (p >= 95) { clearInterval(progressInterval); return 95; }
-        const increment = p < 30 ? 3 : p < 60 ? 2 : p < 80 ? 1.5 : 0.5;
-        return Math.min(95, p + increment + Math.random() * 2);
-      });
-    }, 600);
-
+  /* ── Generate AI recommendations (Step 2) ── */
+  async function generateAiRecommendations() {
+    if (!selectedClient || !reportType || !period) return;
+    setAiLoading(true);
+    setError(null);
     try {
       const r = await fetch("/api/recommendations", {
         method: "POST",
@@ -310,24 +350,20 @@ export default function RapportsPage() {
           context: buildContext(),
         }),
       });
-
-      if (!r.ok || !r.body) throw new Error(`Erreur ${r.status}`);
-
+      if (!r.ok || !r.body) throw new Error("Erreur " + r.status);
       const reader = r.body.getReader();
       const decoder = new TextDecoder();
-      let content = "";
+      let c = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        content += decoder.decode(value, { stream: true });
+        c += decoder.decode(value, { stream: true });
       }
-      setReportContent(content);
+      setReportContent(c);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
-      clearInterval(progressInterval);
-      setGenProgress(100);
-      setTimeout(() => setGenerating(false), 300);
+      setAiLoading(false);
     }
   }
 
@@ -525,6 +561,154 @@ export default function RapportsPage() {
             </motion.div>
           )}
 
+          {/* ── DATA DISPLAY: Real KPIs + Campaign table ── */}
+          {showData && !reportContent && (
+            <motion.div key="data-display" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              {(() => {
+                const meta = selectedClient?.meta_data as MetaData | null | undefined;
+                if (!meta) return (
+                  <div style={{ textAlign: "center", padding: "48px 0" }}>
+                    <p style={{ color: C.textMuted, fontSize: 14, fontFamily: font }}>Aucune donn\u00e9e Meta Ads disponible pour ce client.</p>
+                    <button onClick={() => { setShowData(false); setStep(3); }} style={{ marginTop: 16, fontSize: 13, color: C.orange, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 600 }}>\u2190 Retour</button>
+                  </div>
+                );
+                const campaigns = meta.campaigns || [];
+                const fmt = (n: number) => n >= 1000 ? (n/1000).toFixed(1) + "k" : n.toFixed(n < 10 ? 2 : 0);
+                const fmtMoney = (n: number) => "$" + (n >= 1000 ? (n/1000).toFixed(1) + "k" : n.toFixed(2));
+                return (
+                  <>
+                    <div style={{ marginBottom: 24 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <Activity size={16} color={C.orange} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: C.orange, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: font }}>Donn\u00e9es r\u00e9elles</span>
+                      </div>
+                      <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: font, letterSpacing: "-0.02em" }}>
+                        Performance <span style={{ color: C.orange }}>Meta Ads</span>
+                      </h2>
+                      <p style={{ fontSize: 13, color: C.textMuted, fontFamily: font, marginTop: 4 }}>
+                        {selectedClient?.name} \u00b7 {periodLabel}
+                      </p>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+                      {[
+                        { label: "D\u00e9penses", value: fmtMoney(meta.spend), icon: DollarSign, color: "#ef4444" },
+                        { label: "Leads", value: String(meta.leads), icon: Users, color: "#3b82f6" },
+                        { label: "CPL", value: fmtMoney(meta.cpl), icon: Target, color: "#f59e0b" },
+                        { label: "ROAS", value: meta.roas + "x", icon: TrendingUp, color: "#10b981" },
+                      ].map((kpi) => (
+                        <div key={kpi.label} style={{
+                          background: C.card, borderRadius: 16, padding: "20px 18px",
+                          border: "1px solid " + C.border,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: font }}>{kpi.label}</span>
+                            <kpi.icon size={14} color={kpi.color} />
+                          </div>
+                          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: font, letterSpacing: "-0.02em" }}>{kpi.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
+                      {[
+                        { label: "Impressions", value: fmt(meta.impressions) },
+                        { label: "Clics", value: fmt(meta.clicks) },
+                        { label: "CTR", value: meta.ctr + "%" },
+                      ].map((kpi) => (
+                        <div key={kpi.label} style={{
+                          background: C.card, borderRadius: 12, padding: "14px 12px", textAlign: "center" as const,
+                          border: "1px solid " + C.border,
+                        }}>
+                          <div style={{ fontSize: 10, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: font, marginBottom: 4 }}>{kpi.label}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: font }}>{kpi.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {meta.wins && meta.wins.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                        {meta.wins.map((w: { type: string; msg: string }, i: number) => (
+                          <span key={i} style={{
+                            padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                            background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+                            color: "#6ee7b7", fontFamily: font,
+                          }}>
+                            {w.msg}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ marginBottom: 32 }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: font, marginBottom: 12 }}>
+                        D\u00e9tail par campagne
+                      </h3>
+                      <div style={{ background: C.card, borderRadius: 16, border: "1px solid " + C.border, overflow: "hidden" }}>
+                        <div style={{
+                          display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                          padding: "10px 16px", borderBottom: "1px solid " + C.border,
+                          background: "rgba(255,255,255,0.02)",
+                        }}>
+                          {["Campagne", "D\u00e9penses", "Leads", "CPL", "ROAS"].map((h) => (
+                            <span key={h} style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: font }}>{h}</span>
+                          ))}
+                        </div>
+                        {campaigns.map((camp: Campaign, i: number) => {
+                          const campCpl = camp.leads > 0 ? camp.spend / camp.leads : 0;
+                          const campRoas = camp.spend > 0 ? camp.conv_value / camp.spend : 0;
+                          return (
+                            <div key={camp.id} style={{
+                              display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                              padding: "12px 16px", borderBottom: i < campaigns.length - 1 ? "1px solid " + C.border : "none",
+                              alignItems: "center",
+                            }}>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: font, lineHeight: 1.3 }}>
+                                  {camp.name.length > 35 ? camp.name.substring(0, 35) + "..." : camp.name}
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                                  <span style={{
+                                    fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                                    background: camp.effective_status === "ACTIVE" ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)",
+                                    color: camp.effective_status === "ACTIVE" ? "#6ee7b7" : C.textDim,
+                                    fontFamily: font, textTransform: "uppercase", letterSpacing: "0.05em",
+                                  }}>{camp.effective_status === "ACTIVE" ? "Actif" : camp.effective_status}</span>
+                                  <span style={{ fontSize: 9, color: C.textDim, fontFamily: font }}>{camp.type_label}</span>
+                                </div>
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: font }}>{fmtMoney(camp.spend)}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: camp.leads > 0 ? "#3b82f6" : C.textDim, fontFamily: font }}>{camp.leads}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: campCpl > 0 ? "#f59e0b" : C.textDim, fontFamily: font }}>{campCpl > 0 ? fmtMoney(campCpl) : "\u2014"}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: campRoas >= 3 ? "#10b981" : campRoas > 0 ? "#f59e0b" : C.textDim, fontFamily: font }}>{campRoas > 0 ? campRoas.toFixed(1) + "x" : "\u2014"}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={generateAiRecommendations}
+                      disabled={aiLoading}
+                      style={{
+                        width: "100%", padding: "16px 24px", borderRadius: 16, cursor: aiLoading ? "wait" : "pointer",
+                        fontFamily: font, fontSize: 16, fontWeight: 800, color: "#fff", border: "none",
+                        background: aiLoading ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, " + C.orange + ", #c46e0a)",
+                        boxShadow: aiLoading ? "none" : "0 8px 32px rgba(232,145,45,0.3)",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      {aiLoading ? (
+                        <><LoaderCircle size={18} className="animate-spin" /> Analyse IA en cours...</>
+                      ) : (
+                        <><Sparkles size={18} /> G\u00e9n\u00e9rer les recommandations IA</>
+                      )}
+                    </button>
+                    <div style={{ marginTop: 16, textAlign: "center" }}>
+                      <button onClick={() => { setShowData(false); setStep(3); }} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>\u2190 Modifier les param\u00e8tres</button>
+                    </div>
+                  </>
+                );
+              })()}
+            </motion.div>
+          )}
+
           {/* ── OUTPUT: View / Download buttons ── */}
           {reportContent && (
             <motion.div key="output" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
@@ -537,6 +721,27 @@ export default function RapportsPage() {
                     {selectedClient?.name} · {periodLabel}
                   </p>
                 </div>
+
+                {(() => {
+                  const meta = selectedClient?.meta_data as MetaData | null | undefined;
+                  if (!meta) return null;
+                  const fmtM = (n: number) => "$" + (n >= 1000 ? (n/1000).toFixed(1) + "k" : n.toFixed(2));
+                  return (
+                    <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
+                      {[
+                        { label: "D\u00e9penses", value: fmtM(meta.spend) },
+                        { label: "Leads", value: String(meta.leads) },
+                        { label: "CPL", value: fmtM(meta.cpl) },
+                        { label: "ROAS", value: meta.roas + "x" },
+                      ].map((kpi) => (
+                        <div key={kpi.label} style={{ textAlign: "center" as const }}>
+                          <div style={{ fontSize: 10, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: font }}>{kpi.label}</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: font }}>{kpi.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 32, maxWidth: 360, margin: "32px auto 0" }}>
                   {/* View HTML */}
@@ -576,7 +781,7 @@ export default function RapportsPage() {
 
                   {/* New report button */}
                   <button
-                    onClick={() => { setReportContent(null); setStep(0); setReportType(null); setPeriod(""); setSelectedClient(null); setSearch(""); setError(null); }}
+                    onClick={() => { setReportContent(null); setShowData(false); setAiLoading(false); setStep(0); setReportType(null); setPeriod(""); setSelectedClient(null); setSearch(""); setError(null); }}
                     style={{
                       padding: "12px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700,
                       color: C.textMuted, background: "rgba(255,255,255,0.04)",

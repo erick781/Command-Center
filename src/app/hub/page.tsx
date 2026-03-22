@@ -810,7 +810,7 @@ export default function HubPage() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <main className="mx-auto max-w-[1180px] px-4 py-4 md:py-8 sm:px-6 lg:px-4 md:px-8 lg:py-10">
+      <main className="overflow-x-hidden mx-auto max-w-[1180px] px-4 py-4 md:py-8 sm:px-6 lg:px-4 md:px-8 lg:py-10">
         <section className="overflow-hidden rounded-[30px] border border-white/[0.04] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
             {/* Brainstorm Chat - Main Feature */}
             <div className="mt-6">
