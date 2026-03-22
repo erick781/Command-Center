@@ -858,10 +858,8 @@ export default function HubPage() {
         <section className="overflow-hidden rounded-[30px] border border-white/[0.04] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
             {/* Brainstorm Chat - Main Feature */}
             <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Brain className="h-5 w-5 text-[#E8912D]" />
-                <span className="text-sm font-semibold text-white">Brainstorm avec Claude</span>
-                <span className="text-xs text-white/35">&mdash; Pose une question, lance une idee, ou demande une analyse</span>
+              <div className="mb-3">
+                <span className="text-lg font-bold text-white/90">{"What are we building?"}</span>
               </div>
               <div>
                 <div className="relative">
@@ -876,7 +874,7 @@ export default function HubPage() {
                         setTimeout(() => void sendBrainstormMessage(), 100);
                       }
                     }}
-                    placeholder="Ex: Quel agent devrait-on construire ensuite? Analyse le ROI de..."
+                    placeholder="Pose une question, lance une id\u00e9e, ou demande une analyse..."
                     className="h-14 w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] pl-12 pr-4 text-sm text-white outline-none placeholder:text-white/25 transition-all duration-300 hover:border-white/[0.12] focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25 focus:bg-white/[0.04]"
                   />
                 </div>
