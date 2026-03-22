@@ -68,10 +68,11 @@ type MetaData = {
 };
 
 /* ── Step definitions ── */
-type StepId = "client" | "type" | "period" | "summary";
-const ALL_STEPS: StepId[] = ["client", "type", "period", "summary"];
+type StepId = "client" | "campaigns" | "type" | "period" | "summary";
+const ALL_STEPS: StepId[] = ["client", "campaigns", "type", "period", "summary"];
 const STEP_LABELS: Record<StepId, string> = {
   client: "Client",
+  campaigns: "Campagnes",
   type: "Type",
   period: "Période",
   summary: "Résumé",
@@ -251,6 +252,10 @@ export default function RapportsPage() {
   const [step, setStep] = useState(0);
   const [reportType, setReportType] = useState<ReportTypeKey | null>(null);
   const [period, setPeriod] = useState("");
+  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
+  const [metaCampaigns, setMetaCampaigns] = useState<Campaign[]>([]);
+  const [googleCampaigns, setGoogleCampaigns] = useState<any[]>([]);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
 
   /* ── Generation ── */
   const [generating, setGenerating] = useState(false);
@@ -293,7 +298,33 @@ export default function RapportsPage() {
   const selectClient = useCallback((client: Client) => {
     setSelectedClient(client);
     setSearch(client.name);
+    setSelectedCampaigns([]);
+    setMetaCampaigns([]);
+    setGoogleCampaigns([]);
+    setLoadingCampaigns(true);
     setStep(1);
+    // Load Meta campaigns from client meta_data
+    const meta = client.meta_data as MetaData | null;
+    if (meta?.campaigns) setMetaCampaigns(meta.campaigns);
+    // Load Google Ads campaigns if available
+    fetch("/api/google-ads/child-accounts", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        // Try to find matching Google Ads account by client name
+        const accounts = data.accounts || [];
+        const match = accounts.find((a: any) => 
+          a.name.toLowerCase().includes(client.name.toLowerCase().split(" ")[0])
+        );
+        if (match) {
+          fetch("/api/google-ads/" + match.id + "/campaigns?days=30", { credentials: "include" })
+            .then(r => r.json())
+            .then(gData => { setGoogleCampaigns(gData.campaigns || []); setLoadingCampaigns(false); })
+            .catch(() => setLoadingCampaigns(false));
+        } else {
+          setLoadingCampaigns(false);
+        }
+      })
+      .catch(() => setLoadingCampaigns(false));
   }, []);
 
   /* ── Navigation ── */
@@ -477,6 +508,89 @@ export default function RapportsPage() {
           )}
 
           {/* ── STEP 2: REPORT TYPE ── */}
+
+          {currentStepId === "campaigns" && !reportContent && (
+            <motion.div key="campaigns" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 600, width: "100%" }}>
+              <h2 style={{ color: "#fff", fontSize: 20, fontWeight: 700, fontFamily: font, margin: 0, textAlign: "center" }}>
+                Campagnes de {selectedClient?.name}
+              </h2>
+              <p style={{ color: C.textMuted, fontSize: 14, fontFamily: font, textAlign: "center", margin: 0 }}>
+                {"Sélectionnez les campagnes à inclure ou continuez pour toutes les inclure."}
+              </p>
+              {loadingCampaigns ? (
+                <div style={{ textAlign: "center", padding: 24 }}><LoaderCircle className="animate-spin" style={{ color: C.orange }} /></div>
+              ) : (
+                <>
+                  {metaCampaigns.length > 0 && (
+                    <>
+                      <p style={{ color: C.orange, fontSize: 13, fontWeight: 600, fontFamily: font, margin: "8px 0 4px" }}>{"Meta Ads"}</p>
+                      {metaCampaigns.filter((c: Campaign) => c.spend > 0).map((camp: Campaign) => {
+                        const sel = selectedCampaigns.includes("meta_" + camp.id);
+                        return (
+                          <button key={"meta_" + camp.id} onClick={() => {
+                            const key = "meta_" + camp.id;
+                            setSelectedCampaigns(prev => sel ? prev.filter(c => c !== key) : [...prev, key]);
+                          }} style={{
+                            background: sel ? "rgba(232,145,45,0.15)" : C.card,
+                            border: sel ? "1px solid " + C.orange : "1px solid " + C.border,
+                            borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", fontFamily: font, transition: "all .2s",
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>{camp.name}</span>
+                              <span style={{ color: C.textMuted, fontSize: 12 }}>{"$"}{camp.spend.toLocaleString()}</span>
+                            </div>
+                            <div style={{ color: C.textMuted, fontSize: 12, marginTop: 4 }}>
+                              {camp.clicks}{" clics · "}{camp.leads}{" leads · "}{camp.impressions.toLocaleString()}{" imp."}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+                  {googleCampaigns.length > 0 && (
+                    <>
+                      <p style={{ color: "#4285F4", fontSize: 13, fontWeight: 600, fontFamily: font, margin: "8px 0 4px" }}>{"Google Ads"}</p>
+                      {googleCampaigns.filter((c: any) => c.spend > 0).map((camp: any) => {
+                        const sel = selectedCampaigns.includes("google_" + camp.id);
+                        return (
+                          <button key={"google_" + camp.id} onClick={() => {
+                            const key = "google_" + camp.id;
+                            setSelectedCampaigns(prev => sel ? prev.filter(c => c !== key) : [...prev, key]);
+                          }} style={{
+                            background: sel ? "rgba(66,133,244,0.15)" : C.card,
+                            border: sel ? "1px solid #4285F4" : "1px solid " + C.border,
+                            borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", fontFamily: font, transition: "all .2s",
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>{camp.name}</span>
+                              <span style={{ color: C.textMuted, fontSize: 12 }}>{"$"}{camp.spend.toLocaleString()}</span>
+                            </div>
+                            <div style={{ color: C.textMuted, fontSize: 12, marginTop: 4 }}>
+                              {camp.clicks}{" clics · "}{camp.conversions}{" conv. · "}{camp.impressions.toLocaleString()}{" imp."}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+                  {metaCampaigns.filter((c: Campaign) => c.spend > 0).length === 0 && googleCampaigns.filter((c: any) => c.spend > 0).length === 0 && (
+                    <p style={{ color: C.textMuted, fontSize: 14, fontFamily: font, textAlign: "center", padding: 24 }}>
+                      {"Aucune campagne active avec dépenses."}
+                    </p>
+                  )}
+                </>
+              )}
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
+                <button onClick={back} style={{ background: "rgba(255,255,255,0.06)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: font }}>
+                  {"Retour"}
+                </button>
+                <button onClick={next} style={{ background: C.orange, color: "#000", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: font }}>
+                  {selectedCampaigns.length > 0 ? "Continuer (" + selectedCampaigns.length + ")" : "Toutes les campagnes"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {currentStepId === "type" && !reportContent && (
             <motion.div key="type" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
               <QuestionTitle text="Quel type de rapport?" highlight="type" />
