@@ -675,7 +675,7 @@ export default function ClientsPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {search.trim() && (<div className="mt-6 grid gap-3 md:grid-cols-2">
           {loadingClients ? (
             <div className="col-span-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
               Chargement des clients...
@@ -709,6 +709,12 @@ export default function ClientsPage() {
             ))
           )}
         </div>
+        )}
+        {!search.trim() && (
+          <div className="mt-16 text-center">
+            <p className="text-white/25 text-sm">{"Recherchez un client pour acc\u00e9der \u00e0 son workspace"}</p>
+          </div>
+        )}
       </main>
     </div>
   );
