@@ -257,7 +257,7 @@ export default function ClientsPage() {
     return (
       <div className="min-h-screen">
         <Nav />
-        <main className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-10">
+        <main className="mx-auto max-w-5xl px-4 py-4 md:py-8 md:px-6 md:py-10">
           <Button
             onClick={() => setView("detail")}
             variant="outline"
@@ -311,7 +311,7 @@ export default function ClientsPage() {
     return (
       <div className="min-h-screen">
         <Nav />
-        <main className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-10">
+        <main className="mx-auto max-w-5xl px-4 py-4 md:py-8 md:px-6 md:py-10">
           <Button
             onClick={() => {
               setView("list");
@@ -489,7 +489,7 @@ export default function ClientsPage() {
                     <ExternalLink className="h-4 w-4 text-[#E8912D]" />
                     <div className="text-sm font-semibold text-white">Integrations</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { name: "Asana", connected: !!selectedClient.asana_project_id },
                       { name: "Drive", connected: !!selectedClient.google_drive_folder_id },
@@ -619,7 +619,7 @@ export default function ClientsPage() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <main className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+      <main className="mx-auto max-w-6xl px-4 py-4 md:py-8 md:px-6 md:py-10">
         <h1 className="text-2xl font-bold text-white">Client Hub</h1>
         <p className="mt-1 text-sm text-white/40">Tous vos clients, au meme endroit.</p>
 

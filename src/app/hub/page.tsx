@@ -810,70 +810,54 @@ export default function HubPage() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto max-w-[1180px] px-4 py-4 md:py-8 sm:px-6 lg:px-4 md:px-8 lg:py-10">
         <section className="overflow-hidden rounded-[30px] border border-white/[0.04] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
-          <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-white/35">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(74,222,128,0.08)]" />
-              System Online
-            </span>
-            <span>Command Center V2</span>
-            <span>AI gateway ready</span>
-          </div>
-
-          <div className="mt-7 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="text-4xl font-black tracking-[-0.05em] text-white md:text-5xl">
-                Partenaire.io Command Center
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-white/58 md:text-base">
-                Votre centre de commande.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+            {/* Brainstorm Chat - Main Feature */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="h-5 w-5 text-[#E8912D]" />
+                <span className="text-sm font-semibold text-white">Brainstorm avec Claude</span>
+                <span className="text-xs text-white/35">&mdash; Pose une question, lance une idee, ou demande une analyse</span>
+              </div>
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <MessageSquare className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                  <input
+                    type="text"
+                    value={brainstormInput}
+                    onChange={(e) => setBrainstormInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && brainstormInput.trim() && !brainstormBusy) {
+                        openBrainstorm();
+                        setTimeout(() => void sendBrainstormMessage(), 100);
+                      }
+                    }}
+                    placeholder="Ex: Quel agent devrait-on construire ensuite? Analyse le ROI de..."
+                    className="h-14 w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] pl-12 pr-4 text-sm text-white outline-none placeholder:text-white/25 transition-all duration-300 hover:border-white/[0.12] focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25 focus:bg-white/[0.04]"
+                  />
+                </div>
                 <Button
-                  onClick={() => void handleRefresh()}
-                  disabled={refreshBusy}
-                  className="h-11 rounded-2xl bg-[#E8912D] px-5 text-sm font-semibold text-[#17140f] shadow-[0_18px_40px_rgba(232,145,45,0.22)] hover:bg-[#f0a94b]"
+                  onClick={() => {
+                    if (brainstormInput.trim()) {
+                      openBrainstorm();
+                      setTimeout(() => void sendBrainstormMessage(), 100);
+                    } else {
+                      openBrainstorm();
+                    }
+                  }}
+                  disabled={brainstormBusy}
+                  className="h-14 min-w-[130px] rounded-2xl bg-[#E8912D] px-6 text-sm font-semibold text-[#17140f] shadow-[0_18px_40px_rgba(232,145,45,0.22)] hover:bg-[#f0a94b] transition-all duration-200"
                 >
-                  {refreshBusy ? (
+                  {brainstormBusy ? (
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <Brain className="mr-2 h-4 w-4" />
                   )}
-                  Refresh Data
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => openBrainstorm()}
-                  className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] px-5 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
-                >
-                  <Brain className="mr-2 h-4 w-4" />
                   Brainstorm
                 </Button>
               </div>
             </div>
 
-            <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-[430px]">
-              {[
-                { label: "AI Employees", value: `${liveAgents}` },
-                { label: "Active Accounts", value: `${activeAccounts}` },
-                { label: "Ad Accounts", value: `${adAccounts}` },
-                { label: "Uptime", value: "99.9%" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="card-hover rounded-[24px] border border-white/[0.04] hover:border-white/[0.12] bg-[#17171b]/90 p-5 text-center transition-all duration-300"
-                >
-                  <div className="text-2xl font-black tracking-[-0.04em] text-white">
-                    {stat.value}
-                  </div>
-                  <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/32">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
 
         {/* ── Client Quick-Selector ── */}
@@ -1175,14 +1159,7 @@ export default function HubPage() {
                 <option value="status">Par statut</option>
               </select>
 
-              <Button
-                variant="outline"
-                onClick={() => openBrainstorm()}
-                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200-white/[0.06] bg-white/[0.03] px-4 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white"
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Brainstorm
-              </Button>
+              
 
               <Button
                 onClick={() => setShowIdeaModal(true)}

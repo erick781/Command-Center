@@ -372,7 +372,7 @@ export default function WorkspacePage() {
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-4 md:py-8">
         <AnimatePresence mode="wait">
 
           {/* ════════════ OVERVIEW ════════════ */}
@@ -390,7 +390,7 @@ export default function WorkspacePage() {
               {/* Quick Actions — 2-col grid */}
               <div>
                 <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">Actions rapides</p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {DELIVERABLE_TYPES.slice(0, 4).map(dt => (
                     <motion.button key={dt.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={() => { setSelectedType(dt.id); setTab('deliverables'); }}
@@ -408,7 +408,7 @@ export default function WorkspacePage() {
               <div>
                 <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">Derniers livrables</p>
                 {history.length === 0 ? (
-                  <p className="text-gray-700 text-sm py-8 text-center">Aucun livrable généré encore.</p>
+                  <p className="text-gray-700 text-sm py-4 md:py-8 text-center">Aucun livrable généré encore.</p>
                 ) : (
                   <motion.div variants={stagger} initial="initial" animate="animate"
                     className="divide-y divide-white/[0.04]">

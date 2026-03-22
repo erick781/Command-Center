@@ -20,6 +20,17 @@ export function Nav() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const [refreshingData, setRefreshingData] = useState(false);
+
+  const handleRefreshData = async () => {
+    try {
+      setRefreshingData(true);
+      await fetch("/api/refresh", { method: "POST", credentials: "include" });
+    } finally {
+      setRefreshingData(false);
+      router.refresh();
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -105,10 +116,11 @@ export function Nav() {
           <div className="hidden md:flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.refresh()}
-              className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white"
+              onClick={() => void handleRefreshData()}
+              disabled={refreshingData}
+              className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
             >
-              Actualiser
+              {refreshingData ? "Refreshing..." : "Refresh Data"}
             </button>
             <Link
               href="/admin"
@@ -202,12 +214,13 @@ export function Nav() {
                 <button
                   type="button"
                   onClick={() => {
-                    router.refresh();
+                    void handleRefreshData();
                     setOpen(false);
                   }}
-                  className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                  disabled={refreshingData}
+                  className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                 >
-                  Actualiser
+                  {refreshingData ? "..." : "Refresh Data"}
                 </button>
                 <Link
                   href="/admin"
