@@ -863,8 +863,8 @@ export default function HubPage() {
                 <span className="text-sm font-semibold text-white">Brainstorm avec Claude</span>
                 <span className="text-xs text-white/35">&mdash; Pose une question, lance une idee, ou demande une analyse</span>
               </div>
-              <div className="flex gap-3">
-                <div className="relative flex-1">
+              <div>
+                <div className="relative">
                   <MessageSquare className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
                   <input
                     type="text"
@@ -880,25 +880,7 @@ export default function HubPage() {
                     className="h-14 w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] pl-12 pr-4 text-sm text-white outline-none placeholder:text-white/25 transition-all duration-300 hover:border-white/[0.12] focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25 focus:bg-white/[0.04]"
                   />
                 </div>
-                <Button
-                  onClick={() => {
-                    if (brainstormInput.trim()) {
-                      openBrainstorm();
-                      setTimeout(() => void sendBrainstormMessage(), 100);
-                    } else {
-                      openBrainstorm();
-                    }
-                  }}
-                  disabled={brainstormBusy}
-                  className="h-14 min-w-[130px] rounded-2xl bg-[#E8912D] px-6 text-sm font-semibold text-[#17140f] shadow-[0_18px_40px_rgba(232,145,45,0.22)] hover:bg-[#f0a94b] transition-all duration-200"
-                >
-                  {brainstormBusy ? (
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Brain className="mr-2 h-4 w-4" />
-                  )}
-                  Brainstorm
-                </Button>
+
               </div>
             </div>
 
