@@ -1,142 +1,91 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, CircleAlert, LoaderCircle, Sparkles } from "lucide-react";
-
-import { StrategyClientSnapshot } from "@/components/strategy/strategy-client-snapshot";
-import { StrategyGeneratePanel } from "@/components/strategy/strategy-generate-panel";
-import { StrategyHistoryPanel } from "@/components/strategy/strategy-history-panel";
-import { StrategyMissingContextPanel } from "@/components/strategy/strategy-missing-context-panel";
-import { StrategyOutputModeSelect } from "@/components/strategy/strategy-output-mode-select";
-import { StrategyOutputView } from "@/components/strategy/strategy-output-view";
-import { StrategyProfileEditor } from "@/components/strategy/strategy-profile-editor";
-import { StrategyRequestForm } from "@/components/strategy/strategy-request-form";
-import { StrategyRetrievedContextPanel } from "@/components/strategy/strategy-retrieved-context-panel";
-import { Nav } from "@/components/nav";
-import { Badge } from "@/components/ui/badge";
-import { mdToHtml } from '@/lib/render-deliverable';
-import type {
-  StrategyEngineOutput,
-  StrategyHistoryRecord,
-  StrategyMissingContextEvaluation,
-  StrategyOutputMeta,
-  StrategyProfileEditableSection,
-  StrategyProfileRecord,
-  StrategyRequestRecord,
-  StrategyResolvedOverlays,
-  StrategySeedClient,
-  StrategySourceContextRecord,
-} from "@/lib/strategy-schema";
+import { useEffect, useMemo, useState, useDeferredValue, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  createEmptyStrategyProfile,
-  createEmptyStrategyRequest,
-} from "@/lib/strategy-schema";
+  Search, Target, TrendingUp, Users, Activity, MessageSquare,
+  ChevronRight, Check, Sparkles, LoaderCircle, FileDown, AlertCircle, Eye, FileText,
+} from "lucide-react";
+import { Nav } from "@/components/nav";
+import { mdToHtml, buildPrintableHtml } from "@/lib/render-deliverable";
+import type { StrategySeedClient } from "@/lib/strategy-schema";
 
-type StrategyContextResponse = {
-  client: StrategySeedClient;
-  evaluation: StrategyMissingContextEvaluation;
-  history: StrategyHistoryRecord[];
-  overlays: StrategyResolvedOverlays;
-  permissions: {
-    canAdmin: boolean;
-    canWrite: boolean;
-    role: string | null;
-  };
-  profile: StrategyProfileRecord;
-  request: StrategyRequestRecord;
-  sourceContext: StrategySourceContextRecord[];
+/* ── Design tokens ── */
+const C = {
+  bg: "#0a0a0f",
+  card: "#12121a",
+  cardHover: "rgba(232,145,45,0.3)",
+  orange: "#E8912D",
+  orangeLight: "#f6c978",
+  text: "rgba(255,255,255,0.75)",
+  textMuted: "rgba(255,255,255,0.45)",
+  textDim: "rgba(255,255,255,0.25)",
+  border: "rgba(255,255,255,0.06)",
+} as const;
+
+const font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+/* ── Step definitions ── */
+type StepId = "client" | "objectif" | "detail" | "contexte" | "summary";
+const ALL_STEPS: StepId[] = ["client", "objectif", "detail", "contexte", "summary"];
+const STEP_LABELS: Record<StepId, string> = {
+  client: "Client",
+  objectif: "Objectif",
+  detail: "Détails",
+  contexte: "Contexte",
+  summary: "Résumé",
 };
 
-function sortAndFilterClients(clients: StrategySeedClient[], search: string) {
-  const normalized = search.trim().toLowerCase();
-  if (!normalized) {
-    return clients.slice(0, 10);
-  }
+/* ── Objective options ── */
+type ObjectiveKey = "ventes" | "leads" | "scale" | "diagnostic" | "autre";
+const OBJECTIVES: { key: ObjectiveKey; icon: typeof Target; title: string; desc: string }[] = [
+  { key: "ventes", icon: TrendingUp, title: "Ventes", desc: "Augmenter le chiffre d'affaires et le ROAS" },
+  { key: "leads", icon: Users, title: "Leads", desc: "Générer plus de prospects qualifiés" },
+  { key: "scale", icon: Activity, title: "Scale", desc: "Passer au niveau supérieur de dépense" },
+  { key: "diagnostic", icon: AlertCircle, title: "Diagnostic", desc: "Identifier les problèmes et optimiser" },
+  { key: "autre", icon: MessageSquare, title: "Autre", desc: "Objectif personnalisé" },
+];
 
-  return clients
-    .filter((client) => client.name.toLowerCase().includes(normalized))
-    .slice(0, 10);
-}
+const HORIZONS = ["30 jours", "60 jours", "90 jours"] as const;
+const BUDGETS = ["< 5K", "5-10K", "10-25K", "25K+"] as const;
 
-function jsonHeaders() {
-  return {
-    "Content-Type": "application/json",
-  };
-}
+/* ── Framer variants ── */
+const pageVariants = {
+  enter: { opacity: 0, x: 40 },
+  center: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -40 },
+};
+const pageTrans = { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const };
 
-/* ── Wizard step metadata ── */
-const WIZARD_STEPS = [
-  { id: 1, label: "Sélection du client", short: "Client" },
-  { id: 2, label: "Objectif stratégique", short: "Objectif" },
-  { id: 3, label: "Détails de la demande", short: "Détails" },
-  { id: 4, label: "Révision & Génération", short: "Générer" },
-] as const;
-
-/* ── Step progress indicator component ── */
-function WizardProgress({
-  currentStep,
-  onStepClick,
-}: {
-  currentStep: number;
-  onStepClick: (step: number) => void;
-}) {
-  const progress = ((currentStep - 1) / (WIZARD_STEPS.length - 1)) * 100;
-
+/* ── Reusable components ── */
+function ProgressBar({ steps, current }: { steps: StepId[]; current: number }) {
+  const pct = steps.length > 1 ? (current / (steps.length - 1)) * 100 : 0;
   return (
-    <div className="mb-8">
-      {/* Step label */}
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-medium text-white/70">
-          Étape {currentStep} de {WIZARD_STEPS.length} —{" "}
-          <span className="text-[#f6c978]">
-            {WIZARD_STEPS[currentStep - 1].label}
-          </span>
-        </p>
-        <p className="text-xs text-white/35">
-          {Math.round(progress)}% complété
-        </p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#E8912D] to-[#f6c978] transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
+    <div style={{ marginBottom: 32 }}>
+      {/* thin bar */}
+      <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ height: "100%", borderRadius: 2, background: `linear-gradient(90deg, ${C.orange}, ${C.orangeLight})` }}
         />
       </div>
-
-      {/* Step dots */}
-      <div className="mt-3 flex items-center justify-between">
-        {WIZARD_STEPS.map((step) => {
-          const isCompleted = step.id < currentStep;
-          const isCurrent = step.id === currentStep;
-
+      {/* step dots */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+        {steps.map((s, i) => {
+          const done = i < current;
+          const active = i === current;
           return (
-            <button
-              key={step.id}
-              type="button"
-              onClick={() => onStepClick(step.id)}
-              className="group flex flex-col items-center gap-1.5"
-            >
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold transition-all duration-300 ${
-                  isCompleted
-                    ? "border-[#E8912D]/40 bg-[#E8912D]/20 text-[#f6c978]"
-                    : isCurrent
-                      ? "border-[#E8912D] bg-[#E8912D]/10 text-[#E8912D] shadow-[0_0_12px_rgba(232,145,45,0.25)]"
-                      : "border-white/[0.08] bg-white/[0.02] text-white/30"
-                }`}
-              >
-                {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.id}
-              </div>
-              <span
-                className={`text-[10px] font-medium tracking-wide transition-colors ${
-                  isCurrent ? "text-[#f6c978]" : isCompleted ? "text-white/45" : "text-white/25"
-                }`}
-              >
-                {step.short}
-              </span>
-            </button>
+            <div key={s} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div style={{
+                width: active ? 28 : 8, height: 8, borderRadius: 4,
+                background: done ? C.orange : active ? C.orange : "rgba(255,255,255,0.08)",
+                transition: "all 0.3s ease",
+              }} />
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+                color: active ? C.orangeLight : done ? C.textMuted : C.textDim, fontFamily: font,
+              }}>{STEP_LABELS[s]}</span>
+            </div>
           );
         })}
       </div>
@@ -144,806 +93,680 @@ function WizardProgress({
   );
 }
 
-/* ── Navigation buttons component ── */
-function WizardNav({
-  currentStep,
-  canNext,
-  onBack,
-  onNext,
-  nextLabel,
-}: {
-  currentStep: number;
-  canNext: boolean;
-  onBack: () => void;
-  onNext: () => void;
-  nextLabel?: string;
+function ContextChip({ client }: { client: StrategySeedClient | null }) {
+  if (!client) return null;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px",
+      borderRadius: 20, background: "rgba(232,145,45,0.08)", border: "1px solid rgba(232,145,45,0.2)",
+      fontSize: 12, fontWeight: 600, color: C.orangeLight, fontFamily: font,
+    }}>
+      <div style={{ width: 6, height: 6, borderRadius: 3, background: C.orange }} />
+      {client.name}{client.industry ? ` · ${client.industry}` : ""}
+    </div>
+  );
+}
+
+function QuestionTitle({ text, highlight }: { text: string; highlight: string }) {
+  const parts = text.split(new RegExp(`(${highlight})`, "i"));
+  return (
+    <h2 style={{ fontSize: 28, fontWeight: 800, color: "#fff", fontFamily: font, lineHeight: 1.3, marginBottom: 8, letterSpacing: "-0.02em" }}>
+      {parts.map((p, i) =>
+        p.toLowerCase() === highlight.toLowerCase()
+          ? <span key={i} style={{ color: C.orange }}>{p}</span>
+          : <span key={i}>{p}</span>
+      )}
+    </h2>
+  );
+}
+
+function OptionCard({ selected, icon: Icon, title, desc, onClick }: {
+  selected: boolean; icon: typeof Target; title: string; desc: string; onClick: () => void;
 }) {
   return (
-    <div className="mt-6 flex items-center justify-between">
-      {currentStep > 1 ? (
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-white/55 transition-all hover:border-white/[0.12] hover:bg-white/[0.06] hover:text-white/75"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Retour
-        </button>
-      ) : (
-        <div />
-      )}
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 16, width: "100%",
+      padding: "18px 20px", borderRadius: 16, cursor: "pointer",
+      background: selected ? "rgba(232,145,45,0.08)" : C.card,
+      border: `1.5px solid ${selected ? "rgba(232,145,45,0.5)" : "transparent"}`,
+      transition: "all 0.2s ease", textAlign: "left", fontFamily: font,
+    }}
+    onMouseEnter={(e) => { if (!selected) e.currentTarget.style.borderColor = C.cardHover; }}
+    onMouseLeave={(e) => { if (!selected) e.currentTarget.style.borderColor = "transparent"; }}
+    >
+      <div style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 10,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: selected ? "rgba(232,145,45,0.15)" : "rgba(255,255,255,0.04)",
+      }}>
+        <Icon size={18} color={selected ? C.orange : "rgba(255,255,255,0.35)"} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: selected ? "#fff" : "rgba(255,255,255,0.8)" }}>{title}</div>
+        <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{desc}</div>
+      </div>
+      <div style={{
+        width: 20, height: 20, borderRadius: 10, flexShrink: 0,
+        border: `2px solid ${selected ? C.orange : "rgba(255,255,255,0.12)"}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: selected ? C.orange : "transparent",
+      }}>
+        {selected && <Check size={12} color="#fff" />}
+      </div>
+    </button>
+  );
+}
 
-      {currentStep < WIZARD_STEPS.length ? (
-        <button
-          type="button"
-          disabled={!canNext}
-          onClick={onNext}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#E8912D] to-[#d4800f] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#E8912D]/20 transition-all hover:shadow-[#E8912D]/30 disabled:opacity-40 disabled:shadow-none"
-        >
-          {nextLabel ?? "Suivant"}
-          <ArrowRight className="h-4 w-4" />
-        </button>
-      ) : null}
+function PillSelect({ options, value, onChange }: { options: readonly string[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      {options.map((opt) => (
+        <button key={opt} onClick={() => onChange(opt)} style={{
+          padding: "10px 22px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+          fontSize: 14, fontWeight: 600,
+          background: value === opt ? "rgba(232,145,45,0.12)" : C.card,
+          border: `1.5px solid ${value === opt ? "rgba(232,145,45,0.5)" : "transparent"}`,
+          color: value === opt ? C.orangeLight : C.text,
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => { if (value !== opt) e.currentTarget.style.borderColor = C.cardHover; }}
+        onMouseLeave={(e) => { if (value !== opt) e.currentTarget.style.borderColor = "transparent"; }}
+        >{opt}</button>
+      ))}
+    </div>
+  );
+}
+
+function CleanTextarea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={4}
+      style={{
+        width: "100%", padding: "16px 20px", borderRadius: 16, resize: "vertical",
+        background: C.card, border: `1.5px solid ${C.border}`, color: "#fff",
+        fontSize: 14, fontFamily: font, lineHeight: 1.6, outline: "none",
+        transition: "border-color 0.2s ease",
+      }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,145,45,0.4)"; }}
+      onBlur={(e) => { e.currentTarget.style.borderColor = C.border; }}
+    />
+  );
+}
+
+function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit?: () => void }) {
+  return (
+    <div style={{
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+      padding: "14px 0", borderBottom: `1px solid ${C.border}`,
+    }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: font }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", fontFamily: font }}>{value || "—"}</span>
+        {onEdit && (
+          <button onClick={onEdit} style={{
+            fontSize: 11, color: C.orange, background: "none", border: "none",
+            cursor: "pointer", fontFamily: font, fontWeight: 600,
+          }}>Modifier</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SourceBadge({ connected, label }: { connected: boolean; label: string }) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px",
+      borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: font,
+      background: connected ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)",
+      color: connected ? "#4ade80" : C.textDim,
+      border: `1px solid ${connected ? "rgba(34,197,94,0.2)" : C.border}`,
+    }}>
+      <div style={{ width: 5, height: 5, borderRadius: 3, background: connected ? "#4ade80" : "rgba(255,255,255,0.15)" }} />
+      {label}
+    </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════════ */
+function PhaseCard({ label, accent, html }: { label: string; accent: string; html: string }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div style={{ borderRadius: 16, border: `1px solid ${C.border}`, background: C.card, overflow: "hidden" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
+          padding: "16px 20px", background: "none", border: "none", cursor: "pointer", fontFamily: font,
+        }}
+      >
+        <span style={{
+          display: "inline-flex", padding: "3px 10px", borderRadius: 6,
+          fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+          background: `${accent}15`, color: accent, border: `1px solid ${accent}30`,
+        }}>{label}</span>
+        <ChevronRight size={14} color={C.textDim} style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }} />
+      </button>
+      {open && (
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: "16px 20px" }}>
+          <div
+            style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(255,255,255,0.65)" }}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 export default function StrategiePage() {
+  /* ── Client data ── */
   const [clients, setClients] = useState<StrategySeedClient[]>([]);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [selectedClient, setSelectedClient] = useState<StrategySeedClient | null>(null);
-
-  const [profile, setProfile] = useState<StrategyProfileRecord | null>(null);
-  const [requestState, setRequestState] = useState<StrategyRequestRecord | null>(null);
-  const [sourceContext, setSourceContext] = useState<StrategySourceContextRecord[]>([]);
-  const [evaluation, setEvaluation] = useState<StrategyMissingContextEvaluation | null>(null);
-  const [overlays, setOverlays] = useState<StrategyResolvedOverlays | null>(null);
-  const [history, setHistory] = useState<StrategyHistoryRecord[]>([]);
-  const [output, setOutput] = useState<StrategyEngineOutput | null>(null);
-  const [meta, setMeta] = useState<StrategyOutputMeta | null>(null);
-  const [phaseOutput, setPhaseOutput] = useState<Record<string, string> | null>(null);
-  const [contextAnswers, setContextAnswers] = useState<Record<string, string>>({});
-
-  const [permissions, setPermissions] = useState({
-    canAdmin: false,
-    canWrite: false,
-    role: null as string | null,
+  const [contextLoading, setContextLoading] = useState(false);
+  const [connectedSources, setConnectedSources] = useState<Record<string, boolean>>({
+    meta_ads: false, google_ads: false, analytics: false, crm: false,
   });
 
-  const [contextLoading, setContextLoading] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingRequest, setSavingRequest] = useState(false);
+  /* ── Survey state ── */
+  const [step, setStep] = useState(0);
+  const [objectif, setObjectif] = useState<ObjectiveKey | null>(null);
+  const [horizon, setHorizon] = useState("");
+  const [budget, setBudget] = useState("");
+  const [probleme, setProbleme] = useState("");
+  const [contexte, setContexte] = useState("");
+
+  /* ── Generation ── */
   const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [phaseOutput, setPhaseOutput] = useState<Record<string, string> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [prefillDone, setPrefillDone] = useState(false);
 
-  /* ── Wizard state ── */
-  const [currentStep, setCurrentStep] = useState(1);
+  /* ── Dynamic steps based on objectif ── */
+  const steps = useMemo<StepId[]>(() => {
+    const base: StepId[] = ["client", "objectif"];
+    if (objectif === "ventes" || objectif === "leads" || objectif === "scale" || objectif === "diagnostic") {
+      base.push("detail");
+    }
+    base.push("contexte", "summary");
+    return base;
+  }, [objectif]);
 
-  const dropdownClients = useMemo(() => {
-    return sortAndFilterClients(clients, deferredSearch);
-  }, [clients, deferredSearch]);
+  const currentStepId = steps[step] ?? "client";
 
+  /* ── Load clients ── */
   useEffect(() => {
-    fetch(`/api/client-hub/clients?show_hidden=true`, { credentials: "include" })
-      .then((response) => response.json())
-      .then((data) => setClients(Array.isArray(data) ? data : []))
+    fetch("/api/client-hub/clients?show_hidden=true", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setClients(Array.isArray(d) ? d : []))
       .catch(() => setClients([]));
   }, []);
 
+  /* ── Filtered client list ── */
+  const filtered = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    const list = q ? clients.filter((c) => c.name.toLowerCase().includes(q)) : clients;
+    return list.slice(0, 8);
+  }, [clients, deferredSearch]);
+
+  /* ── URL prefill ── */
   useEffect(() => {
-    if (!clients.length || prefillDone) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const queryClient = params.get("client");
-    if (!queryClient) {
-      setPrefillDone(true);
-      return;
+    if (!clients.length) return;
+    const p = new URLSearchParams(window.location.search).get("client");
+    if (p) {
+      const match = clients.find((c) => c.name.toLowerCase() === p.toLowerCase());
+      if (match) selectClient(match);
     }
+  }, [clients]);
 
-    const matchedClient = clients.find(
-      (client) => client.name.toLowerCase() === queryClient.toLowerCase(),
-    );
-
-    if (matchedClient) {
-      void loadContext(matchedClient);
-    }
-
-    setPrefillDone(true);
-  }, [clients, prefillDone]);
-
-  async function loadContext(client: StrategySeedClient) {
-    setContextLoading(true);
-    setError(null);
-    setStatusMessage(null);
+  /* ── Select client + load context ── */
+  const selectClient = useCallback(async (client: StrategySeedClient) => {
     setSelectedClient(client);
     setSearch(client.name);
-    setShowDropdown(false);
-    setProfile(null);
-    setRequestState(null);
-    setSourceContext([]);
-    setEvaluation(null);
-    setOverlays(null);
-    setHistory([]);
-    setOutput(null);
-    setMeta(null);
-
+    setContextLoading(true);
+    setError(null);
     try {
-      const response = await fetch(
-        `/api/strategy-engine/context?clientId=${encodeURIComponent(client.id)}`,
-        {
-          cache: "no-store",
-          credentials: "include",
-        },
-      );
-      const data = (await response.json()) as Partial<StrategyContextResponse> & {
-        error?: string;
-      };
-
-      if (response.ok && data.profile && data.request) {
-        setSelectedClient(data.client ?? client);
-        setProfile(data.profile);
-        setRequestState(data.request);
-        setSourceContext(Array.isArray(data.sourceContext) ? data.sourceContext : []);
-        setEvaluation(data.evaluation ?? null);
-        setOverlays(data.overlays ?? null);
-        setHistory(Array.isArray(data.history) ? data.history : []);
-        setPermissions(
-          data.permissions ?? {
-            canAdmin: false,
-            canWrite: false,
-            role: null,
-          },
-        );
-      } else {
-        // Fallback: build minimal profile from client data so generation still works
-        const fallbackProfile = createEmptyStrategyProfile({
-          clientId: client.id,
-          clientName: client.name,
-        });
-        if (client.industry) fallbackProfile.business.industry = client.industry;
-        if (client.website) fallbackProfile.identity.websiteUrl = client.website;
-        const fallbackRequest = createEmptyStrategyRequest({
-          clientId: client.id,
-        });
-        setSelectedClient(client);
-        setProfile(fallbackProfile);
-        setRequestState(fallbackRequest);
-        setPermissions({ canAdmin: false, canWrite: true, role: null });
+      const r = await fetch(`/api/strategy-engine/context?clientId=${encodeURIComponent(client.id)}`, { cache: "no-store", credentials: "include" });
+      const d = await r.json();
+      // Detect connected sources from sourceContext array
+      const sources: Record<string, boolean> = { meta_ads: false, google_ads: false, analytics: false, crm: false };
+      if (Array.isArray(d.sourceContext)) {
+        for (const sc of d.sourceContext) {
+          const src = (sc.source ?? "").toLowerCase();
+          if (src.includes("meta") || src.includes("facebook")) sources.meta_ads = true;
+          if (src.includes("google") && src.includes("ad")) sources.google_ads = true;
+          if (src.includes("analytics") || src.includes("ga4")) sources.analytics = true;
+          if (src.includes("crm") || src.includes("hubspot")) sources.crm = true;
+        }
       }
-      // Auto-advance to step 2 after loading context (or fallback)
-      setCurrentStep(2);
-    } catch (loadError) {
-      // Even on network error, create fallback so user can still generate
-      const fallbackProfile = createEmptyStrategyProfile({
-        clientId: client.id,
-        clientName: client.name,
-      });
-      if (client.industry) fallbackProfile.business.industry = client.industry;
-      if (client.website) fallbackProfile.identity.websiteUrl = client.website;
-      const fallbackRequest = createEmptyStrategyRequest({
-        clientId: client.id,
-      });
-      setSelectedClient(client);
-      setProfile(fallbackProfile);
-      setRequestState(fallbackRequest);
-      setPermissions({ canAdmin: false, canWrite: true, role: null });
-      setCurrentStep(2);
+      setConnectedSources(sources);
+    } catch {
+      setConnectedSources({ meta_ads: false, google_ads: false, analytics: false, crm: false });
     } finally {
       setContextLoading(false);
+      setStep(1);
     }
-  }
+  }, []);
 
-  function updateProfileSection(
-    section: StrategyProfileEditableSection,
-    patch: Record<string, unknown>,
-  ) {
-    setProfile((current) => {
-      if (!current) return current;
-      const currentSection = (current[section] as Record<string, unknown>) ?? {};
+  /* ── Navigation ── */
+  const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const goTo = (idx: number) => { if (idx <= step) setStep(idx); };
 
-      return {
-        ...current,
-        [section]: {
-          ...currentSection,
-          ...patch,
-        },
-      } as StrategyProfileRecord;
-    });
-  }
+  /* ── Detail value for summary ── */
+  const detailLabel = objectif === "scale" ? "Budget actuel" : objectif === "diagnostic" ? "Problème" : "Horizon";
+  const detailValue = objectif === "scale" ? budget : objectif === "diagnostic" ? probleme : horizon;
 
-  function updateMarketingBoolean(
-    section: "marketing",
-    key: string,
-    value: boolean,
-  ) {
-    setProfile((current) => {
-      if (!current) return current;
-
-      return {
-        ...current,
-        [section]: {
-          ...current[section],
-          [key]: value,
-        },
-      } as StrategyProfileRecord;
-    });
-  }
-
-  function updateRequest(patch: Partial<StrategyRequestRecord>) {
-    setRequestState((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        ...patch,
-      };
-    });
-  }
-
-  function updateTestedContext(
-    key: keyof StrategyRequestRecord["testedContext"],
-    value: string[],
-  ) {
-    setRequestState((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        testedContext: {
-          ...current.testedContext,
-          [key]: value,
-        },
-      };
-    });
-  }
-
-  function updateConstraint(
-    key: keyof StrategyRequestRecord["constraints"],
-    value: string,
-  ) {
-    setRequestState((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        constraints: {
-          ...current.constraints,
-          [key]: value,
-        },
-      };
-    });
-  }
-
-  async function saveProfile() {
-    if (!profile || !permissions.canWrite) {
-      return;
-    }
-
-    setSavingProfile(true);
-    setError(null);
-    setStatusMessage(null);
-
-    try {
-      const response = await fetch("/api/strategy-engine/profile", {
-        method: "POST",
-        credentials: "include",
-        headers: jsonHeaders(),
-        body: JSON.stringify({
-          profile,
-          sourceContext,
-        }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.profile) {
-        throw new Error(data.error || "Impossible d'enregistrer le profil.");
-      }
-
-      setProfile(data.profile);
-      if (Array.isArray(data.sourceContext)) {
-        setSourceContext(data.sourceContext);
-      }
-      setStatusMessage("Profil client enregistre dans Supabase.");
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Impossible d'enregistrer le profil.",
-      );
-    } finally {
-      setSavingProfile(false);
-    }
-  }
-
-  async function saveRequest() {
-    if (!profile || !requestState) {
-      return;
-    }
-
-    setSavingRequest(true);
-    setError(null);
-    setStatusMessage(null);
-
-    try {
-      const response = await fetch("/api/strategy-engine/request", {
-        method: "POST",
-        credentials: "include",
-        headers: jsonHeaders(),
-        body: JSON.stringify({
-          profile,
-          request: requestState,
-          sourceContext,
-        }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.request) {
-        throw new Error(data.error || "Impossible d'enregistrer la requete.");
-      }
-
-      setProfile(data.profile ?? profile);
-      setRequestState(data.request);
-      setEvaluation(data.evaluation ?? null);
-      setOverlays(data.overlays ?? null);
-      if (Array.isArray(data.sourceContext)) {
-        setSourceContext(data.sourceContext);
-      }
-      setStatusMessage("Requete strategique enregistree.");
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Impossible d'enregistrer la requete.",
-      );
-    } finally {
-      setSavingRequest(false);
-    }
-  }
-
-  async function generateStrategy() {
-    if (!profile || !requestState) {
-      return;
-    }
-
+  /* ── Generate strategy ── */
+  async function generate() {
+    if (!selectedClient || !objectif) return;
     setGenerating(true);
+    setGenProgress(0);
     setError(null);
-    setStatusMessage(null);
-
+    setPhaseOutput(null);
+    const progressInterval = setInterval(() => {
+      setGenProgress((p: number) => {
+        if (p >= 95) { clearInterval(progressInterval); return 95; }
+        const increment = p < 30 ? 3 : p < 60 ? 2 : p < 80 ? 1.5 : 0.5;
+        return Math.min(95, p + increment + Math.random() * 2);
+      });
+    }, 600);
     try {
-      // Fire-and-forget: send profile/context to Codex for storage
-      void fetch("/api/strategy-engine/generate", {
-        method: "POST",
-        credentials: "include",
-        headers: jsonHeaders(),
-        body: JSON.stringify({ profile, request: requestState, sourceContext }),
-      }).then(async (r) => {
-        if (r.ok) {
-          const sd = await r.json();
-          setProfile(sd.profile ?? profile);
-          setRequestState(sd.request ?? requestState);
-          setEvaluation(sd.evaluation ?? null);
-          setOverlays(sd.overlays ?? null);
-          if (Array.isArray(sd.sourceContext)) setSourceContext(sd.sourceContext);
-          if (Array.isArray(sd.history)) setHistory(sd.history);
-        }
-      }).catch(() => { /* storage fire-and-forget */ });
-
-      // Actual generation via FastAPI V1 (7 phases)
-      const response = await fetch("/api/strategy/generate", {
-        method: "POST",
-        credentials: "include",
+      const r = await fetch("/api/strategy/generate", {
+        method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          client_name: selectedClient?.name ?? profile?.identity?.brandName ?? "",
-          industry: profile?.business?.industry ?? "",
-          website: profile?.identity?.websiteUrl ?? "",
-          budget: requestState?.constraints?.budget ?? "5000",
-          strategy_type: "360",
-          context: [requestState?.manualNotes || "", ...Object.entries(contextAnswers).filter(([, v]) => v.trim()).map(([k, v]) => `${k}: ${v}`)].filter(Boolean).join("\n"),
+          client_name: selectedClient.name,
+          industry: selectedClient.industry ?? "",
+          website: selectedClient.website ?? "",
+          budget: objectif === "scale" ? budget : "5000",
+          strategy_type: objectif === "diagnostic" ? "diagnostic" : "360",
+          context: [
+            `Objectif: ${objectif}`,
+            horizon ? `Horizon: ${horizon}` : "",
+            budget ? `Budget: ${budget}` : "",
+            probleme ? `Problème: ${probleme}` : "",
+            contexte || "",
+          ].filter(Boolean).join("\n"),
           force_regenerate: true,
         }),
       });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || data.error || "Impossible de generer la strategie.");
-      }
-
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || d.error || "Erreur de génération");
       setPhaseOutput({
-        audit: data.audit ?? "",
-        research: data.research ?? "",
-        strategy: data.strategy ?? "",
-        build: data.build ?? "",
-        launch: data.launch ?? "",
-        scale: data.scale ?? "",
-        kpis: data.kpis ?? "",
+        audit: d.audit ?? "", research: d.research ?? "", strategy: d.strategy ?? "",
+        build: d.build ?? "", launch: d.launch ?? "", scale: d.scale ?? "", kpis: d.kpis ?? "",
       });
-      setOutput(null);
-      setMeta(null);
-      setStatusMessage("Strategie 7-phases generee via FastAPI.");
-    } catch (generationError) {
-      setError(
-        generationError instanceof Error
-          ? generationError.message
-          : "Impossible de generer la strategie.",
-      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
-      setGenerating(false);
+      clearInterval(progressInterval);
+      setGenProgress(100);
+      setTimeout(() => setGenerating(false), 300);
     }
   }
 
-  function openHistoryEntry(entry: StrategyHistoryRecord) {
-    if (entry.output) {
-      setOutput(entry.output);
-      setMeta(null);
-      setPhaseOutput(null);
-      setStatusMessage("Sortie historique chargee depuis la memoire strategie.");
-    }
-  }
-
-  /* ── Wizard navigation helpers ── */
-  function goNext() {
-    setCurrentStep((s) => Math.min(s + 1, WIZARD_STEPS.length));
-  }
-
-  function goBack() {
-    setCurrentStep((s) => Math.max(s - 1, 1));
-  }
-
-  function goToStep(step: number) {
-    // Allow clicking completed steps or current step only
-    if (step <= currentStep) {
-      setCurrentStep(step);
-    }
-  }
-
-  // Can proceed from step 1 only if a client is selected and context loaded
-  const canProceedStep1 = !!selectedClient && !!profile && !contextLoading;
-  // Can proceed from step 2 if request state exists (objective fields)
-  const canProceedStep2 = !!requestState;
-  // Can proceed from step 3 always (details are optional enrichment)
-  const canProceedStep3 = true;
-
+  /* ══════════════════════════ RENDER ══════════════════════════ */
   return (
-    <div className="min-h-screen">
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: font }}>
       <Nav />
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
-        {/* ── Header ── */}
-        <section className="mb-8 rounded-[28px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-6 md:p-8">
-          <Badge className="border border-[#E8912D]/20 bg-[#E8912D]/10 text-[#f6c978]">
-            Stratégie IA
-          </Badge>
-          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-4xl">
-              <h1 className="text-3xl font-black tracking-[-0.05em] text-white md:text-4xl">
-                Strategie
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-white/55 md:text-base">
-                Sélectionnez un client, configurez le profil stratégique et lancez
-                une génération IA adaptée. Le moteur analyse le contexte, identifie
-                les données manquantes et produit des recommandations
-                stratégiques actionnables.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm text-white/45">
-              {contextLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                  Chargement du contexte...
-                </span>
-              ) : selectedClient ? (
-                `${selectedClient.name} | ${permissions.role ?? "no-role"}`
-              ) : (
-                "Selectionne un client pour commencer"
-              )}
-            </div>
-          </div>
-        </section>
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "40px 20px 80px" }}>
+        {/* Context chip */}
+        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <ContextChip client={selectedClient} />
+          {step > 0 && !phaseOutput && (
+            <span style={{ fontSize: 11, color: C.textDim, fontFamily: font }}>
+              Étape {step + 1} / {steps.length}
+            </span>
+          )}
+        </div>
 
-        {/* ── Error / Status messages ── */}
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/15 bg-red-500/8 p-4 text-sm text-red-200">
+        {/* Progress bar (hidden on step 0 and after generation) */}
+        {step > 0 && !phaseOutput && <ProgressBar steps={steps} current={step} />}
+
+        {/* Error */}
+        {error && (
+          <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5", fontSize: 13, fontFamily: font }}>
             {error}
           </div>
-        ) : null}
-
-        {statusMessage ? (
-          <div className="mb-6 rounded-2xl border border-[#E8912D]/15 bg-[#E8912D]/8 p-4 text-sm text-[#f6c978]">
-            {statusMessage}
-          </div>
-        ) : null}
-
-        {/* ── Wizard Progress Bar ── */}
-        <WizardProgress currentStep={currentStep} onStepClick={goToStep} />
-
-        {/* ══════════════════════════════════════════════
-            STEP 1 — Sélection du client
-        ══════════════════════════════════════════════ */}
-        {currentStep === 1 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="mx-auto max-w-3xl">
-              <div className="mb-6 text-center">
-                <h2 className="text-xl font-bold text-white">Quel client veux-tu accompagner?</h2>
-                <p className="mt-2 text-sm text-white/45">
-                  Recherche et sélectionne un client. Son profil stratégique sera chargé automatiquement.
-                </p>
-              </div>
-
-              <StrategyClientSnapshot
-                clients={clients}
-                contextLoading={contextLoading}
-                dropdownClients={dropdownClients}
-                onSelectClient={(client) => void loadContext(client)}
-                profile={profile}
-                search={search}
-                selectedClient={selectedClient}
-                setSearch={setSearch}
-                setShowDropdown={setShowDropdown}
-                showDropdown={showDropdown}
-              />
-
-              {profile && (
-                <div className="mt-6">
-                  <StrategyProfileEditor
-                    canWrite={permissions.canWrite}
-                    onBoolean={updateMarketingBoolean}
-                    onSectionPatch={updateProfileSection}
-                    profile={profile}
-                  />
-                </div>
-              )}
-
-              <WizardNav
-                currentStep={currentStep}
-                canNext={canProceedStep1}
-                onBack={goBack}
-                onNext={goNext}
-                nextLabel="Définir l'objectif"
-              />
-            </div>
-          </div>
         )}
 
-        {/* ══════════════════════════════════════════════
-            STEP 2 — Objectif stratégique
-        ══════════════════════════════════════════════ */}
-        {currentStep === 2 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="mx-auto max-w-3xl">
-              <div className="mb-6 text-center">
-                <h2 className="text-xl font-bold text-white">Quel est ton objectif?</h2>
-                <p className="mt-2 text-sm text-white/45">
-                  Définis l&apos;objectif, le stade du client et l&apos;horizon de planification.
-                </p>
-              </div>
+        <AnimatePresence mode="wait">
+          {/* ── STEP: CLIENT ── */}
+          {currentStepId === "client" && !phaseOutput && (
+            <motion.div key="client" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quel client accompagnes-tu?" highlight="client" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Recherche et sélectionne en un clic. Le contexte sera chargé automatiquement.
+              </p>
 
-              <StrategyRequestForm
-                canWrite={permissions.canWrite}
-                onConstraintPatch={updateConstraint}
-                onPatch={updateRequest}
-                onTestedPatch={updateTestedContext}
-                overlays={overlays}
-                request={requestState}
-              />
-
-              <WizardNav
-                currentStep={currentStep}
-                canNext={canProceedStep2}
-                onBack={goBack}
-                onNext={goNext}
-                nextLabel="Ajouter les détails"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════
-            STEP 3 — Détails de la demande
-        ══════════════════════════════════════════════ */}
-        {currentStep === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="mx-auto max-w-3xl">
-              <div className="mb-6 text-center">
-                <h2 className="text-xl font-bold text-white">Contexte récupéré & mode de sortie</h2>
-                <p className="mt-2 text-sm text-white/45">
-                  Vérifie les données récupérées, les alertes de contexte manquant, et choisis le format de sortie.
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                <StrategyRetrievedContextPanel
-                  request={requestState}
-                  sourceContext={sourceContext}
-                />
-
-                <StrategyMissingContextPanel evaluation={evaluation} contextAnswers={contextAnswers} onAnswer={(field, value) => setContextAnswers((prev) => ({ ...prev, [field]: value }))} />
-
-                <StrategyOutputModeSelect
-                  canWrite={permissions.canWrite}
-                  onChange={(value) =>
-                    updateRequest({
-                      requestedOutputs: [value],
-                    })
-                  }
-                  value={requestState?.requestedOutputs[0] ?? "30_day_action_plan"}
+              {/* Search input */}
+              <div style={{ position: "relative", marginBottom: 16 }}>
+                <Search size={16} color={C.textMuted} style={{ position: "absolute", left: 16, top: 14 }} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un client..."
+                  autoFocus
+                  style={{
+                    width: "100%", padding: "12px 16px 12px 44px", borderRadius: 14,
+                    background: C.card, border: `1.5px solid ${C.border}`, color: "#fff",
+                    fontSize: 15, fontFamily: font, outline: "none",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,145,45,0.4)"; }}
+                  onBlur={(e) => { setTimeout(() => { e.currentTarget.style.borderColor = C.border; }, 200); }}
                 />
               </div>
 
-              <WizardNav
-                currentStep={currentStep}
-                canNext={canProceedStep3}
-                onBack={goBack}
-                onNext={goNext}
-                nextLabel="Réviser & Générer"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════
-            STEP 4 — Révision & Génération
-        ══════════════════════════════════════════════ */}
-        {currentStep === 4 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="mx-auto max-w-4xl">
-              <div className="mb-6 text-center">
-                <h2 className="text-xl font-bold text-white">Révision & Génération</h2>
-                <p className="mt-2 text-sm text-white/45">
-                  Vérifie le résumé, sauvegarde tes données et lance la génération stratégique.
-                </p>
-              </div>
-
-              {/* Summary cards */}
-              <div className="mb-6 grid gap-4 md:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-all hover:border-[#E8912D]/20 hover:bg-white/[0.05]"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">Client</p>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    {selectedClient?.name ?? "—"}
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-all hover:border-[#E8912D]/20 hover:bg-white/[0.05]"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">Objectif</p>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    {requestState?.objective || "—"}
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-all hover:border-[#E8912D]/20 hover:bg-white/[0.05]"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">Format</p>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    {requestState?.requestedOutputs[0]?.replace(/_/g, " ") ?? "—"}
-                  </p>
-                </button>
-              </div>
-
-              {/* Missing context warning if any */}
-              {evaluation && (
-                <div className="mb-6">
-                  <StrategyMissingContextPanel evaluation={evaluation} contextAnswers={contextAnswers} onAnswer={(field, value) => setContextAnswers((prev) => ({ ...prev, [field]: value }))} />
+              {/* Client list */}
+              {contextLoading ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 20, justifyContent: "center", color: C.textMuted, fontSize: 13 }}>
+                  <LoaderCircle size={16} className="animate-spin" /> Chargement du contexte...
                 </div>
-              )}
-
-              {/* Generate panel */}
-              <StrategyGeneratePanel
-                canWrite={permissions.canWrite}
-                evaluation={evaluation}
-                generating={generating}
-                lastGeneratedAt={requestState?.generatedAt ?? null}
-                meta={meta}
-                onGenerate={() => void generateStrategy()}
-                onSaveProfile={() => void saveProfile()}
-                onSaveRequest={() => void saveRequest()}
-                savingProfile={savingProfile}
-                savingRequest={savingRequest}
-              />
-
-              {/* Output view - 7 Phase Cards (FastAPI) */}
-              {phaseOutput && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-[11px] uppercase tracking-[0.22em] text-white/45">Strategie 7 Phases</span>
-                    <a
-                      href={`/api/strategy/export-docx/${encodeURIComponent(selectedClient?.name ?? "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#E8912D]/30 bg-[#E8912D]/10 px-3 py-1.5 text-xs font-medium text-[#f6c978] transition-colors hover:bg-[#E8912D]/20"
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {filtered.map((c) => (
+                    <button key={c.id} onClick={() => selectClient(c)} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                      background: selectedClient?.id === c.id ? "rgba(232,145,45,0.06)" : C.card,
+                      border: `1.5px solid ${selectedClient?.id === c.id ? "rgba(232,145,45,0.3)" : "transparent"}`,
+                      transition: "all 0.15s ease", textAlign: "left", width: "100%", fontFamily: font,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.cardHover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = selectedClient?.id === c.id ? "rgba(232,145,45,0.3)" : "transparent"; }}
                     >
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      Exporter DOCX
-                    </a>
-                  </div>
-                  {[
-                    { key: "audit", label: "Phase 1 \u2014 Audit", color: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
-                    { key: "research", label: "Phase 2 \u2014 Research", color: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
-                    { key: "strategy", label: "Phase 3 \u2014 Strat\u00e9gie", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" },
-                    { key: "build", label: "Phase 4 \u2014 Build", color: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
-                    { key: "launch", label: "Phase 5 \u2014 Lancement", color: "bg-red-500/15 text-red-400 border-red-500/25" },
-                    { key: "scale", label: "Phase 6 \u2014 Scale", color: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
-                    { key: "kpis", label: "Phase 7 \u2014 KPIs", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" },
-                  ].map((phase) => {
-                    const text = phaseOutput[phase.key];
-                    if (!text) return null;
-                    return (
-                      <details key={phase.key} className="group rounded-2xl border border-white/[0.06] bg-[#1a1a1f]" open>
-                        <summary className="flex cursor-pointer items-center gap-3 px-5 py-4 text-sm font-medium text-white/80 select-none">
-                          <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${phase.color}`}>
-                            {phase.label}
-                          </span>
-                          <svg className="ml-auto h-4 w-4 text-white/30 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </summary>
-                        <div className="border-t border-white/[0.06] px-5 py-4">
-                          <div
-                            className="prose prose-invert prose-sm max-w-none text-white/65 [&_h3]:text-white/80 [&_h3]:text-sm [&_h3]:font-semibold [&_strong]:text-white/80 [&_table]:text-xs [&_th]:text-left [&_th]:pr-4 [&_td]:pr-4 [&_td]:py-1"
-                            dangerouslySetInnerHTML={{
-                              __html: mdToHtml(text)
-                            }}
-                          />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                          {[c.industry, c.website].filter(Boolean).join(" · ") || "Aucune info"}
                         </div>
-                      </details>
-                    );
-                  })}
+                      </div>
+                      <ChevronRight size={14} color={C.textDim} />
+                    </button>
+                  ))}
+                  {filtered.length === 0 && search && (
+                    <p style={{ textAlign: "center", padding: 20, color: C.textDim, fontSize: 13 }}>Aucun client trouvé</p>
+                  )}
                 </div>
               )}
-              {/* Fallback: Codex output if no phase output */}
-              {!phaseOutput && output && (
-                <div className="mt-6">
-                  <StrategyOutputView meta={meta} output={output} />
+            </motion.div>
+          )}
+
+          {/* ── STEP: OBJECTIF ── */}
+          {currentStepId === "objectif" && !phaseOutput && (
+            <motion.div key="objectif" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quel est l'objectif principal?" highlight="objectif" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Cela détermine le type de stratégie et les questions suivantes.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {OBJECTIVES.map((o) => (
+                  <OptionCard
+                    key={o.key}
+                    selected={objectif === o.key}
+                    icon={o.icon}
+                    title={o.title}
+                    desc={o.desc}
+                    onClick={() => { setObjectif(o.key); setTimeout(next, 300); }}
+                  />
+                ))}
+              </div>
+              {/* Back */}
+              <div style={{ marginTop: 24 }}>
+                <button onClick={back} style={{
+                  fontSize: 13, color: C.textMuted, background: "none", border: "none",
+                  cursor: "pointer", fontFamily: font, fontWeight: 500,
+                }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP: DETAIL (dynamic) ── */}
+          {currentStepId === "detail" && !phaseOutput && (
+            <motion.div key="detail" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              {(objectif === "ventes" || objectif === "leads") && (
+                <>
+                  <QuestionTitle text="Quel horizon de planification?" highlight="horizon" />
+                  <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                    La durée influence la profondeur de la stratégie.
+                  </p>
+                  <PillSelect options={HORIZONS} value={horizon} onChange={(v) => { setHorizon(v); setTimeout(next, 250); }} />
+                </>
+              )}
+              {objectif === "scale" && (
+                <>
+                  <QuestionTitle text="Quel est le budget actuel?" highlight="budget" />
+                  <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                    Pour calibrer les recommandations de scaling.
+                    {connectedSources.meta_ads && (
+                      <span style={{ display: "block", marginTop: 8, fontSize: 12, color: "#4ade80" }}>
+                        ✓ Meta Ads connecté — les métriques seront récupérées automatiquement
+                      </span>
+                    )}
+                  </p>
+                  <PillSelect options={BUDGETS} value={budget} onChange={(v) => { setBudget(v); setTimeout(next, 250); }} />
+                </>
+              )}
+              {objectif === "diagnostic" && (
+                <>
+                  <QuestionTitle text="Quel est le problème principal?" highlight="problème" />
+                  <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                    Décris la situation pour orienter l'analyse.
+                  </p>
+                  <CleanTextarea value={probleme} onChange={setProbleme} placeholder="Ex: Le ROAS a chuté de 4.2 à 1.8 en 3 semaines..." />
+                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                    <button onClick={next} disabled={!probleme.trim()} style={{
+                      padding: "10px 24px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                      fontSize: 14, fontWeight: 700, color: "#fff",
+                      background: probleme.trim() ? `linear-gradient(135deg, ${C.orange}, #d4800f)` : "rgba(255,255,255,0.06)",
+                      border: "none", opacity: probleme.trim() ? 1 : 0.4, transition: "all 0.2s ease",
+                    }}>Suivant →</button>
+                  </div>
+                </>
+              )}
+              <div style={{ marginTop: 24 }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP: CONTEXTE ── */}
+          {currentStepId === "contexte" && !phaseOutput && (
+            <motion.div key="contexte" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Contexte additionnel?" highlight="Contexte" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 16, fontFamily: font }}>
+                Optionnel. Ajoute des notes, contraintes ou informations supplémentaires.
+              </p>
+
+              {/* Source suggestions */}
+              {!connectedSources.meta_ads && !connectedSources.google_ads && (
+                <div style={{
+                  padding: "12px 16px", borderRadius: 12, marginBottom: 16,
+                  background: "rgba(232,145,45,0.04)", border: `1px solid rgba(232,145,45,0.12)`,
+                  fontSize: 12, color: C.orangeLight, fontFamily: font,
+                }}>
+                  💡 Connecte Meta Ads ou Google Ads dans les paramètres pour enrichir la stratégie automatiquement.
                 </div>
               )}
 
-              {/* History */}
-              <div className="mt-6">
-                <StrategyHistoryPanel history={history} onOpen={openHistoryEntry} />
+              <CleanTextarea
+                value={contexte}
+                onChange={setContexte}
+                placeholder="Ex: Le client vient de lancer un nouveau produit à 297$, cible femmes 25-45 au Québec..."
+              />
+
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>← Retour</button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={next} style={{
+                    padding: "10px 20px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                    fontSize: 13, fontWeight: 600, color: C.textMuted,
+                    background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
+                  }}>Passer →</button>
+                  {contexte.trim() && (
+                    <button onClick={next} style={{
+                      padding: "10px 24px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                      fontSize: 14, fontWeight: 700, color: "#fff",
+                      background: `linear-gradient(135deg, ${C.orange}, #d4800f)`, border: "none",
+                    }}>Suivant →</button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP: SUMMARY ── */}
+          {currentStepId === "summary" && !phaseOutput && (
+            <motion.div key="summary" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Résumé avant génération" highlight="génération" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Vérifie les informations. Clique sur « Modifier » pour ajuster.
+              </p>
+
+              <div style={{ background: C.card, borderRadius: 20, padding: "8px 24px", marginBottom: 24, border: `1px solid ${C.border}` }}>
+                <SummaryRow label="Client" value={selectedClient?.name ?? ""} onEdit={() => goTo(0)} />
+                <SummaryRow label="Industrie" value={selectedClient?.industry ?? "Non spécifié"} />
+                <SummaryRow label="Objectif" value={OBJECTIVES.find((o) => o.key === objectif)?.title ?? ""} onEdit={() => goTo(1)} />
+                {objectif !== "autre" && <SummaryRow label={detailLabel} value={detailValue} onEdit={() => goTo(steps.indexOf("detail"))} />}
+                <SummaryRow label="Contexte" value={contexte ? contexte.slice(0, 80) + (contexte.length > 80 ? "..." : "") : "Aucun"} onEdit={() => goTo(steps.indexOf("contexte"))} />
               </div>
 
-              {!permissions.canWrite && selectedClient ? (
-                <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm text-white/45">
-                  <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/28">
-                    <CircleAlert className="h-3.5 w-3.5" />
-                    Lecture seule
-                  </div>
-                  Ton role permet de consulter le moteur, mais pas d&apos;ecrire dans les
-                  tables strategie.
+              {/* Connected sources */}
+              <div style={{ marginBottom: 28 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: C.textDim, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10, fontFamily: font }}>
+                  Sources connectées
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <SourceBadge connected={connectedSources.meta_ads} label="Meta Ads" />
+                  <SourceBadge connected={connectedSources.google_ads} label="Google Ads" />
+                  <SourceBadge connected={connectedSources.analytics} label="Analytics" />
+                  <SourceBadge connected={connectedSources.crm} label="CRM" />
                 </div>
-              ) : null}
-
-              {!output && !phaseOutput && selectedClient ? (
-                <div className="mt-6 rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] p-5 text-sm text-white/38">
-                  <div className="mb-2 inline-flex items-center gap-2 text-white/55">
-                    <Sparkles className="h-4 w-4" />
-                    Sortie structuree
-                  </div>
-                  <div>
-                    Le rendu canonique apparaitra ici apres une generation valide ou
-                    apres l&apos;ouverture d&apos;une entree de l&apos;historique.
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Back button on step 4 */}
-              <div className="mt-6">
-                <WizardNav
-                  currentStep={currentStep}
-                  canNext={false}
-                  onBack={goBack}
-                  onNext={() => {}}
-                />
               </div>
-            </div>
-          </div>
-        )}
+
+              {/* Generate button */}
+              <button
+                onClick={generate}
+                disabled={generating}
+                style={{
+                  width: "100%", padding: "16px 24px", borderRadius: 16, cursor: generating ? "wait" : "pointer",
+                  fontFamily: font, fontSize: 16, fontWeight: 800, color: "#fff", border: "none",
+                  background: generating ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, ${C.orange}, #c46e0a)`,
+                  boxShadow: generating ? "none" : "0 8px 32px rgba(232,145,45,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  transition: "all 0.3s ease",
+                }}
+              >
+                {generating ? (
+                  <><LoaderCircle size={18} className="animate-spin" /> Création en cours · {Math.round(genProgress)}%</>
+                ) : (
+                  <><Sparkles size={18} /> Générer la stratégie</>
+                )}
+              </button>
+
+              <div style={{ marginTop: 16, textAlign: "center" }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── OUTPUT: View / Download buttons only ── */}
+          {phaseOutput && (
+            <motion.div key="output" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <div style={{ textAlign: "center", padding: "48px 0" }}>
+                <div style={{ marginBottom: 12 }}>
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: font, letterSpacing: "-0.02em" }}>
+                    Stratégie <span style={{ color: C.orange }}>7 Phases</span>
+                  </h2>
+                  <p style={{ fontSize: 13, color: C.textMuted, marginTop: 4, fontFamily: font }}>
+                    {selectedClient?.name} · {OBJECTIVES.find((o) => o.key === objectif)?.title}
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 32, maxWidth: 360, margin: "32px auto 0" }}>
+                  {/* ── Button 1: View HTML (InnovaSoins template) ── */}
+                  <button
+                    onClick={() => {
+                      const phases = [
+                        { key: "audit", label: "Phase 1 — Audit" },
+                        { key: "research", label: "Phase 2 — Recherche" },
+                        { key: "strategy", label: "Phase 3 — Stratégie" },
+                        { key: "build", label: "Phase 4 — Build" },
+                        { key: "launch", label: "Phase 5 — Lancement" },
+                        { key: "scale", label: "Phase 6 — Scale" },
+                        { key: "kpis", label: "Phase 7 — KPIs" },
+                      ];
+                      const md = phases.map(p => phaseOutput[p.key] ? `# ${p.label}\n${phaseOutput[p.key]}` : "").filter(Boolean).join("\n\n");
+                      const html = buildPrintableHtml(md, "Stratégie 7 Phases", selectedClient?.name ?? "", new Date().toLocaleDateString("fr-CA"));
+                      const w = window.open("", "_blank");
+                      if (w) { w.document.write(html); w.document.close(); }
+                    }}
+                    style={{
+                      width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                      fontFamily: font, fontSize: 16, fontWeight: 800, color: "#fff", border: "none",
+                      background: `linear-gradient(135deg, ${C.orange}, #c46e0a)`,
+                      boxShadow: "0 8px 32px rgba(232,145,45,0.3)",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    }}
+                  >
+                    <Eye size={18} /> Voir la stratégie
+                  </button>
+
+                  {/* ── Button 2: Download DOCX ── */}
+                  <a
+                    href={`/api/strategy/export-docx/${encodeURIComponent(selectedClient?.name ?? "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                      fontFamily: font, fontSize: 16, fontWeight: 800, color: C.orangeLight, border: `1px solid rgba(232,145,45,0.25)`,
+                      background: "rgba(232,145,45,0.08)", textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <FileDown size={18} /> Télécharger DOCX
+                  </a>
+
+                  {/* ── Button 3: Download PDF (InnovaSoins + Charts) ── */}
+                  <a
+                    href={`/api/strategy/export-pdf/${encodeURIComponent(selectedClient?.name ?? "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                      fontFamily: font, fontSize: 16, fontWeight: 800, color: "#f4b85c", border: "1px solid rgba(244,184,92,0.25)",
+                      background: "rgba(244,184,92,0.06)", textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <FileText size={18} /> Télécharger PDF
+                  </a>
+
+                  <button
+                    onClick={() => { setPhaseOutput(null); setStep(0); setObjectif(null); setHorizon(""); setBudget(""); setProbleme(""); setContexte(""); setSelectedClient(null); setSearch(""); }}
+                    style={{
+                      padding: "12px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                      color: C.textMuted, background: "rgba(255,255,255,0.04)",
+                      border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: font,
+                      marginTop: 8,
+                    }}
+                  >
+                    Nouvelle stratégie
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

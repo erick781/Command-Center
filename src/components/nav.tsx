@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 const links = [
   { href: "/hub", label: "Hub" },
   { href: "/rapports", label: "Rapports" },
-  { href: "/tracker", label: "Tracker" },
   { href: "/clients", label: "Clients" },
   { href: "/strategie", label: "Strategie" },
 ];
@@ -73,7 +72,7 @@ export function Nav() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0f0f12]/92 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.32)]">
+      <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-[#0f0f12]/95 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.32)]">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <Link href="/hub" className="group flex items-center gap-3 no-underline">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8912D] via-[#f6bb57] to-[#ffd980] shadow-[0_14px_30px_rgba(232,145,45,0.22)] ring-1 ring-white/10 transition-transform duration-200 group-hover:-translate-y-0.5">
@@ -87,7 +86,7 @@ export function Nav() {
             </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-inner shadow-black/20">
+          <nav className="hidden lg:flex items-center gap-1 rounded-full border border-white/[0.04] bg-white/[0.02] p-1 shadow-inner shadow-black/20">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -107,17 +106,17 @@ export function Nav() {
             <button
               type="button"
               onClick={() => router.refresh()}
-              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-white"
+              className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white"
             >
               Actualiser
             </button>
             <Link
               href="/admin"
-              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-white no-underline"
+              className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white no-underline"
             >
               Admin
             </Link>
-            <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1.5">
+            <div className="flex items-center gap-2 rounded-full border border-white/[0.04] bg-white/[0.02] px-2 py-1.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#E8912D] to-[#ffd96b] text-[11px] font-bold tracking-wide text-[#17140f] shadow-[0_10px_20px_rgba(232,145,45,0.2)]">
                 {initials}
               </div>
@@ -153,7 +152,7 @@ export function Nav() {
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-[18px] text-white/70 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-white"
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.04] bg-white/[0.02] text-[18px] text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white"
           >
             {open ? "✕" : "☰"}
           </button>
@@ -165,8 +164,8 @@ export function Nav() {
             className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed right-0 top-0 z-50 flex h-full w-[88vw] max-w-sm flex-col border-l border-white/[0.08] bg-[#0f0f12] p-5 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)] md:hidden">
-            <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+          <div className="fixed right-0 top-0 z-50 flex h-full w-[88vw] max-w-sm flex-col border-l border-white/[0.04] bg-[#0f0f12] p-5 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)] md:hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.04] pb-4">
               <Link href="/hub" onClick={() => setOpen(false)} className="flex items-center gap-3 no-underline">
                 <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8912D] to-[#ffd96b] text-[11px] font-black text-[#17140f]">
                   <Image src="/logo.png" alt="Partenaire.io" width={24} height={24} className="h-6 w-6 object-contain" />
@@ -179,13 +178,13 @@ export function Nav() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] text-white/55 transition hover:bg-white/[0.05] hover:text-white"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.04] text-white/50 transition hover:bg-white/[0.05] hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+            <div className="mt-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#E8912D] to-[#ffd96b] text-[11px] font-bold tracking-wide text-[#17140f]">
                   {initials}
@@ -206,14 +205,14 @@ export function Nav() {
                     router.refresh();
                     setOpen(false);
                   }}
-                  className="rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                  className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
                 >
                   Actualiser
                 </button>
                 <Link
                   href="/admin"
                   onClick={() => setOpen(false)}
-                  className="rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white no-underline"
+                  className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white no-underline"
                 >
                   Admin
                 </Link>

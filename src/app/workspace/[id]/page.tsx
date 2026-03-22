@@ -49,17 +49,17 @@ interface Field { key: string; label: string; type: 'text' | 'textarea' | 'selec
 interface DeliverableType { id: string; label: string; desc: string; icon: string; fields: Field[] }
 
 const DELIVERABLE_TYPES: DeliverableType[] = [
-  { id: 'strategie_360', label: 'Stratégie 360', desc: 'Stratégie complète 6 phases', icon: '🎯',
+  { id: 'strategie_360', label: 'Stratégie 360', desc: '6 phases', icon: '🎯',
     fields: [{ key: 'strategy_type', label: 'Type de stratégie', type: 'select',
       options: ['strategie_360','audit_rapide','plan_lancement','optimisation','scaling'] }] },
-  { id: 'rapport_leadgen', label: 'Rapport Lead Gen', desc: 'Analyse performance lead generation', icon: '📊', fields: [] },
-  { id: 'rapport_ecommerce', label: 'Rapport E-commerce', desc: 'Analyse performance e-commerce', icon: '🛒', fields: [] },
-  { id: 'rapport_coaching', label: 'Rapport Coaching', desc: 'Analyse performance coaching', icon: '📈', fields: [] },
-  { id: 'diagnostic', label: 'Diagnostic Rapide', desc: "Analyse rapide d'un problème", icon: '🔍',
+  { id: 'rapport_leadgen', label: 'Rapport Lead Gen', desc: 'Lead Gen', icon: '📊', fields: [] },
+  { id: 'rapport_ecommerce', label: 'Rapport E-commerce', desc: 'E-commerce', icon: '🛒', fields: [] },
+  { id: 'rapport_coaching', label: 'Rapport Coaching', desc: 'Coaching', icon: '📈', fields: [] },
+  { id: 'diagnostic', label: 'Diagnostic Rapide', desc: "Problème spécifique", icon: '🔍',
     fields: [{ key: 'problem', label: 'Problème à diagnostiquer', type: 'textarea' }] },
-  { id: 'brief_creatif', label: 'Brief Créatif', desc: 'Brief pour créatifs et copies', icon: '🎨',
+  { id: 'brief_creatif', label: 'Brief Créatif', desc: 'Créatifs & copies', icon: '🎨',
     fields: [{ key: 'brief_context', label: 'Contexte du brief', type: 'textarea' }] },
-  { id: 'resume_client', label: 'Résumé Client', desc: 'Résumé exécutif du client', icon: '📋', fields: [] },
+  { id: 'resume_client', label: 'Résumé Client', desc: "Vue d'ensemble", icon: '📋', fields: [] },
 ];
 
 // ─── CONTENT GENERATION ─────────────────────────────────────────────────
@@ -336,7 +336,7 @@ export default function WorkspacePage() {
             <div>
               <a href="/clients" className="text-gray-600 text-xs hover:text-gray-400 transition-colors">← Clients</a>
               <h1 className="text-2xl font-bold mt-1 tracking-tight">{client.name}</h1>
-              <p className="text-sm text-gray-600 mt-0.5">{client.industry || 'Industrie non définie'}</p>
+              <p className="text-sm text-gray-600 mt-0.5">{client.industry || '—'}</p>
             </div>
             <div className="flex items-center gap-2 pb-1">
               {client.health_score != null && (

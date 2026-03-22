@@ -811,7 +811,7 @@ export default function HubPage() {
     <div className="min-h-screen">
       <Nav />
       <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
+        <section className="overflow-hidden rounded-[30px] border border-white/[0.04] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-8">
           <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.28em] text-white/35">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-emerald-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(74,222,128,0.08)]" />
@@ -827,8 +827,7 @@ export default function HubPage() {
                 Partenaire.io Command Center
               </h1>
               <p className="mt-4 max-w-xl text-sm leading-7 text-white/58 md:text-base">
-                Ton cockpit central: opérations, équipes IA, refresh et brainstorm.
-                Tout ce qui compte, au même endroit.
+                Votre centre de commande.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button
@@ -863,7 +862,7 @@ export default function HubPage() {
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="card-hover rounded-[24px] border border-white/[0.08] bg-[#17171b] p-4 text-center"
+                  className="card-hover rounded-[24px] border border-white/[0.04] hover:border-white/[0.12] bg-[#17171b]/90 p-5 text-center transition-all duration-300"
                 >
                   <div className="text-2xl font-black tracking-[-0.04em] text-white">
                     {stat.value}
@@ -878,10 +877,10 @@ export default function HubPage() {
         </section>
 
         {/* ── Client Quick-Selector ── */}
-        <section className="mt-8 rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5">
+        <section className="mt-8 rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
           <div className="mb-4 flex items-center gap-3">
             <Users className="h-5 w-5 text-[#E8912D]" />
-            <h2 className="text-lg font-bold text-white">Accès rapide client</h2>
+            <h2 className="text-lg font-bold text-white">Clients</h2>
             <Badge className="border border-[#E8912D]/20 bg-[#E8912D]/10 text-[10px] uppercase tracking-[0.18em] text-[#f6c978]">
               {hubClients.length} clients
             </Badge>
@@ -895,10 +894,10 @@ export default function HubPage() {
               onFocus={() => setClientDropdownOpen(true)}
               onBlur={() => setTimeout(() => setClientDropdownOpen(false), 200)}
               placeholder="Accéder au workspace d'un client..."
-              className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25"
+              className="h-12 w-full rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.03] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#E8912D]/50 focus:ring-1 focus:ring-[#E8912D]/25"
             />
             {clientDropdownOpen && clientSearch.length > 0 && filteredClients.length > 0 && (
-              <div className="absolute left-0 right-0 top-[52px] z-50 max-h-[260px] overflow-y-auto rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-[#1a1a1f] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+              <div className="absolute left-0 right-0 top-[52px] z-50 max-h-[260px] overflow-y-auto rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-[#1a1a1f] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                 {filteredClients.slice(0, 8).map((client) => (
                   <button
                     key={client.id}
@@ -928,7 +927,7 @@ export default function HubPage() {
 
         {/* ── Derniers livrables ── */}
         {recentDeliverables.length > 0 && (
-          <section className="mt-6 rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5">
+          <section className="mt-6 rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
             <div className="mb-4 flex items-center gap-3">
               <Package className="h-5 w-5 text-[#E8912D]" />
               <h2 className="text-lg font-bold text-white">Derniers livrables</h2>
@@ -939,7 +938,7 @@ export default function HubPage() {
                   key={d.id}
                   type="button"
                   onClick={() => router.push(`/workspace/${d.client_id}`)}
-                  className="flex w-full items-center gap-4 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition hover:bg-[#E8912D]/8"
+                  className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.02] px-4 py-3 text-left transition hover:bg-[#E8912D]/8"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -970,7 +969,7 @@ export default function HubPage() {
             {agents.map((agent) => (
               <div
                 key={agent.name}
-                className="card-hover group relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5"
+                className="card-hover group relative overflow-hidden rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5"
               >
                 <div
                   className="absolute inset-x-0 top-0 h-[3px] opacity-85"
@@ -1040,7 +1039,7 @@ export default function HubPage() {
         </section>
 
         <section className="mt-10 grid gap-4 xl:grid-cols-[1.45fr_0.95fr]">
-          <div className="rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5">
+          <div className="rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-white">Quick Actions</h2>
@@ -1048,7 +1047,7 @@ export default function HubPage() {
                   Raccourcis V1 pour les zones les plus consultees.
                 </p>
               </div>
-              <Badge className="border border-white/[0.06] bg-white/[0.04] text-white/45">
+              <Badge className="border border-white/[0.04] bg-white/[0.03] text-white/45">
                 4 raccourcis
               </Badge>
             </div>
@@ -1061,7 +1060,7 @@ export default function HubPage() {
                     href={action.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4 no-underline"
+                    className="card-hover rounded-2xl border border-white/[0.04] hover:border-white/[0.12] transition-all duration-300 bg-white/[0.02] p-4 no-underline"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1075,7 +1074,7 @@ export default function HubPage() {
                   <Link
                     key={action.label}
                     href={action.href}
-                    className="card-hover rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4 no-underline"
+                    className="card-hover rounded-2xl border border-white/[0.04] hover:border-white/[0.12] transition-all duration-300 bg-white/[0.02] p-4 no-underline"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1090,7 +1089,7 @@ export default function HubPage() {
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5">
+          <div className="rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-white">Refresh Pipeline</h2>
@@ -1110,11 +1109,11 @@ export default function HubPage() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.02] p-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-white/32">Statut</div>
                 <div className="mt-2 text-sm font-semibold text-white">{refreshState.message}</div>
               </div>
-              <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.02] p-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-white/32">
                   Derniere info
                 </div>
@@ -1139,12 +1138,12 @@ export default function HubPage() {
           </div>
         </section>
 
-        <section className="mt-10 rounded-[26px] border border-white/[0.08] bg-[#17171b] p-5">
+        <section className="mt-10 rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-white">Idees d&apos;agents</h2>
-                <Badge className="border border-white/[0.06] bg-white/[0.04] text-white/45">
+                <Badge className="border border-white/[0.04] bg-white/[0.03] text-white/45">
                   {ideas.length} idees
                 </Badge>
               </div>
@@ -1157,7 +1156,7 @@ export default function HubPage() {
               <select
                 value={categoryFilter}
                 onChange={(event) => setCategoryFilter(event.target.value)}
-                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                className="h-11 rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
               >
                 {categoryOptions.map((option) => (
                   <option key={option.value || "all"} value={option.value}>
@@ -1169,7 +1168,7 @@ export default function HubPage() {
               <select
                 value={sortMode}
                 onChange={(event) => setSortMode(event.target.value)}
-                className="h-11 rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                className="h-11 rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
               >
                 <option value="votes">Plus votees</option>
                 <option value="newest">Recentes</option>
@@ -1214,7 +1213,7 @@ export default function HubPage() {
                 return (
                   <div
                     key={idea.id}
-                    className="card-hover rounded-[24px] border border-white/[0.08] bg-white/[0.02] p-5"
+                    className="card-hover rounded-[24px] border border-white/[0.04] hover:border-white/[0.12] bg-white/[0.02] p-5 transition-all duration-300"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -1269,7 +1268,7 @@ export default function HubPage() {
                           size="sm"
                           onClick={() => void voteIdea(idea)}
                           disabled={!userEmail}
-                          className={`rounded-xl border-white/[0.06] bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white ${
+                          className={`rounded-xl border-white/[0.04] bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white ${
                             voted ? "border-[#E8912D]/25 bg-[#E8912D]/10 text-[#f6c978]" : ""
                           }`}
                         >
@@ -1279,7 +1278,7 @@ export default function HubPage() {
                     </div>
 
                     {isAdmin ? (
-                      <div className="mt-4 border-t border-white/[0.06] pt-4">
+                      <div className="mt-4 border-t border-white/[0.04] pt-4">
                         <label className="mb-2 block text-[10px] uppercase tracking-[0.2em] text-white/30">
                           Statut admin
                         </label>
@@ -1307,7 +1306,7 @@ export default function HubPage() {
 
       {showIdeaModal ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[28px] border border-white/[0.08] bg-[#131316] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+          <div className="w-full max-w-xl rounded-[28px] border border-white/[0.04] bg-[#131316] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold tracking-[-0.03em] text-white">
@@ -1360,7 +1359,7 @@ export default function HubPage() {
                   <select
                     value={ideaCategory}
                     onChange={(event) => setIdeaCategory(event.target.value)}
-                    className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                    className="h-12 w-full rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
                   >
                     {categoryOptions
                       .filter((option) => option.value)
@@ -1378,7 +1377,7 @@ export default function HubPage() {
                   <select
                     value={ideaPriority}
                     onChange={(event) => setIdeaPriority(event.target.value)}
-                    className="h-12 w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
+                    className="h-12 w-full rounded-2xl border border-white/[0.04] hover:border-white/[0.10] transition-all duration-300 bg-white/[0.03] px-4 text-sm text-white outline-none focus:border-[#E8912D]"
                   >
                     <option value="nice-to-have">Nice-to-have</option>
                     <option value="important">Important</option>
@@ -1432,11 +1431,11 @@ export default function HubPage() {
           onClick={() => setBrainstormOpen(false)}
         />
         <aside
-          className={`fixed right-0 top-0 z-[80] flex h-screen w-full max-w-[440px] flex-col border-l border-white/[0.08] bg-[#121216] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition-transform duration-300 ${
+          className={`fixed right-0 top-0 z-[80] flex h-screen w-full max-w-[440px] flex-col border-l border-white/[0.04] bg-[#121216] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition-transform duration-300 ${
             brainstormOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          <div className="border-b border-white/[0.06] px-5 py-4">
+          <div className="border-b border-white/[0.04] px-5 py-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
@@ -1494,7 +1493,7 @@ export default function HubPage() {
             ) : null}
           </div>
 
-          <div className="border-t border-white/[0.06] px-5 py-4">
+          <div className="border-t border-white/[0.04] px-5 py-4">
             <div className="flex gap-3">
               <Textarea
                 value={brainstormInput}

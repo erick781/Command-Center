@@ -1,1052 +1,596 @@
 "use client";
-import { mdToHtml, buildPrintableHtml } from '@/lib/render-deliverable';
 
+import { useEffect, useMemo, useState, useDeferredValue, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search, ChevronRight, Check, Sparkles, LoaderCircle,
+  Eye, FileDown, FileText, BarChart3, ShoppingCart, GraduationCap,
+} from "lucide-react";
 import { Nav } from "@/components/nav";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { mdToHtml, buildPrintableHtml } from "@/lib/render-deliverable";
 
+/* ── Design tokens (same as strategie) ── */
+const C = {
+  bg: "#0a0a0f",
+  card: "#12121a",
+  cardHover: "rgba(232,145,45,0.3)",
+  orange: "#E8912D",
+  orangeLight: "#f6c978",
+  text: "rgba(255,255,255,0.75)",
+  textMuted: "rgba(255,255,255,0.45)",
+  textDim: "rgba(255,255,255,0.25)",
+  border: "rgba(255,255,255,0.06)",
+} as const;
+
+const font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+/* ── Types ── */
 type Client = {
   id: string;
   name: string;
   status?: string;
   industry?: string;
-  retainer_monthly?: number;
   website?: string;
   meta_data?: Record<string, unknown> | null;
 };
 
-type Campaign = {
-  id: string;
-  name: string;
-  status?: string;
-  spend?: number | null;
-  cpl?: number | null;
-  roas?: number | null;
-  leads?: number | null;
-  objective?: string | null;
-  raw?: unknown;
+/* ── Step definitions ── */
+type StepId = "client" | "type" | "period" | "summary";
+const ALL_STEPS: StepId[] = ["client", "type", "period", "summary"];
+const STEP_LABELS: Record<StepId, string> = {
+  client: "Client",
+  type: "Type",
+  period: "Période",
+  summary: "Résumé",
 };
 
-type ClientMetaData = {
-  campaigns?: unknown;
-  campaign_names?: unknown;
-  campaign_count?: unknown;
-  active_campaigns?: unknown;
-  spend?: unknown;
-  cpl?: unknown;
-  roas?: unknown;
-  flags?: unknown;
-};
-
-type ReportRecord = {
-  id: string;
-  clientName: string;
-  reportType: string;
-  reportTypeLabel: string;
-  period: string;
-  selectedCampaigns: string[];
-  generatedAt: string;
-  content: string;
-  context: string;
-  summary: {
-    campaigns: number;
-    activeCampaigns: number;
-    spend: number | null;
-    cpl: number | null;
-    roas: number | null;
-  };
-};
-
-const REPORT_TYPES = [
-  {
-    value: "leadgen",
-    label: "Lead Gen",
-    description: "Pipeline, bookings, CPL, lead quality.",
-  },
-  {
-    value: "coach",
-    label: "Coach / High Ticket",
-    description: "Applications, calls, closes, cash collected.",
-  },
-  {
-    value: "ecommerce",
-    label: "eCommerce",
-    description: "ATC, checkout, purchases, revenue, ROAS.",
-  },
-] as const;
-
-const PERIODS = [
-  { value: "7", label: "7d" },
-  { value: "30", label: "30d" },
-  { value: "60", label: "60d" },
-  { value: "90", label: "90d" },
+/* ── Report type options ── */
+type ReportTypeKey = "leadgen" | "ecommerce" | "coach";
+const REPORT_TYPES: { key: ReportTypeKey; icon: typeof BarChart3; title: string; desc: string }[] = [
+  { key: "leadgen", icon: BarChart3, title: "Lead Gen", desc: "Pipeline, bookings, CPL, qualité des leads" },
+  { key: "ecommerce", icon: ShoppingCart, title: "E-commerce", desc: "ATC, checkout, achats, revenue, ROAS" },
+  { key: "coach", icon: GraduationCap, title: "Coaching", desc: "Applications, appels, closes, cash collected" },
 ];
 
-const STORAGE_KEY = "partenaire_recent_reports";
+const PERIODS = [
+  { value: "7", label: "7 jours" },
+  { value: "30", label: "30 jours" },
+  { value: "60", label: "60 jours" },
+  { value: "90", label: "90 jours" },
+] as const;
 
-function toNumber(value: unknown): number | null {
-  const num = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(num) ? num : null;
-}
+/* ── Framer variants (same as strategie) ── */
+const pageVariants = {
+  enter: { opacity: 0, x: 40 },
+  center: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -40 },
+};
+const pageTrans = { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const };
 
-function formatMoney(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return `$${Math.round(value).toLocaleString("en-US")}`;
-}
-
-function formatNumber(value: number | null | undefined, digits = 0) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return value.toLocaleString("en-US", {
-    maximumFractionDigits: digits,
-    minimumFractionDigits: 0,
-  });
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function safeText(value: unknown) {
-  return typeof value === "string" ? value : "";
-}
-
-function getClientMeta(client: Client | null): ClientMetaData {
-  return (client?.meta_data ?? {}) as ClientMetaData;
-}
-
-function defaultCampaigns(client: Client): Campaign[] {
-  const meta = getClientMeta(client);
-  const rawCampaigns = meta.campaigns ?? meta.campaign_names;
-
-  if (Array.isArray(rawCampaigns)) {
-    return rawCampaigns
-      .map((item, index) => {
-        if (typeof item === "string") {
-          return {
-            id: `${client.id}-${index}`,
-            name: item,
-            status: index === 0 ? "active" : "paused",
-            raw: item,
-          } satisfies Campaign;
-        }
-
-        if (item && typeof item === "object") {
-          const campaign = item as Record<string, unknown>;
-          return {
-            id: safeText(campaign.id) || safeText(campaign.campaign_id) || `${client.id}-${index}`,
-            name: safeText(campaign.name) || safeText(campaign.campaign_name) || `Campaign ${index + 1}`,
-            status: safeText(campaign.status) || safeText(campaign.delivery_status),
-            spend: toNumber(campaign.spend ?? campaign.amount_spent ?? campaign.cost),
-            cpl: toNumber(campaign.cpl ?? campaign.cost_per_lead),
-            roas: toNumber(campaign.roas),
-            leads: toNumber(campaign.leads ?? campaign.results),
-            objective: safeText(campaign.objective),
-            raw: campaign,
-          } satisfies Campaign;
-        }
-
-        return null;
-      })
-      .filter(Boolean) as Campaign[];
-  }
-
-  if (rawCampaigns && typeof rawCampaigns === "object") {
-    return Object.entries(rawCampaigns as Record<string, unknown>).map(([name, value], index) => ({
-      id: `${client.id}-${index}-${name}`,
-      name,
-      status: value && typeof value === "object" ? safeText((value as Record<string, unknown>).status) : "active",
-      spend: value && typeof value === "object" ? toNumber((value as Record<string, unknown>).spend) : null,
-      cpl: value && typeof value === "object" ? toNumber((value as Record<string, unknown>).cpl) : null,
-      roas: value && typeof value === "object" ? toNumber((value as Record<string, unknown>).roas) : null,
-      raw: value,
-    }));
-  }
-
-  const metaCampaignCount = toNumber(meta.campaign_count);
-  return Array.from({ length: metaCampaignCount && metaCampaignCount > 0 ? Math.min(metaCampaignCount, 5) : 0 }).map((_, index) => ({
-    id: `${client.id}-fallback-${index}`,
-    name: `Campaign ${index + 1}`,
-    status: index === 0 ? "active" : "paused",
-  }));
-}
-
-
-function escapeHtml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function buildClientSummary(client: Client | null) {
-  if (!client) {
-    return {
-      campaigns: 0,
-      activeCampaigns: 0,
-      spend: null as number | null,
-      cpl: null as number | null,
-      roas: null as number | null,
-      flags: [] as string[],
-      campaignsList: [] as Campaign[],
-    };
-  }
-
-  const meta = getClientMeta(client);
-  const campaignsList = defaultCampaigns(client);
-  const summaryCampaigns = toNumber(meta.campaign_count) ?? campaignsList.length;
-  const activeCampaigns = toNumber(meta.active_campaigns) ?? campaignsList.filter((campaign) => campaign.status === "active").length;
-  const spend = toNumber(meta.spend);
-  const cpl = toNumber(meta.cpl);
-  const roas = toNumber(meta.roas);
-  const flags = Array.isArray(meta.flags) ? (meta.flags as unknown[]).map((flag) => String(flag)) : [];
-
-  return {
-    campaigns: summaryCampaigns,
-    activeCampaigns,
-    spend,
-    cpl,
-    roas,
-    flags,
-    campaignsList,
-  };
-}
-
-function buildContext(client: Client, reportType: string, period: string, selectedCampaigns: Campaign[], notes: string) {
-  const summary = buildClientSummary(client);
-  const meta = getClientMeta(client);
-  const selectedNames = selectedCampaigns.length ? selectedCampaigns.map((campaign) => campaign.name).join(", ") : "All campaigns";
-
-  const contextLines = [
-    `Client: ${client.name}`,
-    `Type: ${reportType}`,
-    `Periode: ${period} jours`,
-    `Selected campaigns: ${selectedNames}`,
-    `Campaign count: ${summary.campaigns}`,
-    `Campagnes actives: ${summary.activeCampaigns}`,
-    summary.spend !== null ? `Spend: ${summary.spend}` : "",
-    summary.cpl !== null ? `CPL: ${summary.cpl}` : "",
-    summary.roas !== null ? `ROAS: ${summary.roas}` : "",
-    client.industry ? `Industry: ${client.industry}` : "",
-    client.website ? `Website: ${client.website}` : "",
-    Array.isArray(meta.flags) && meta.flags.length
-      ? `Flags: ${(meta.flags as string[]).join(" | ")}`
-      : "",
-    notes ? `Notes: ${notes}` : "",
-  ].filter(Boolean);
-
-  return contextLines.join("\n");
-}
-
-function buildReportHtml(report: ReportRecord) {
-  const campaignLines = report.selectedCampaigns.length
-    ? report.selectedCampaigns.map((name) => `<li>${escapeHtml(name)}</li>`).join("")
-    : "<li>All campaigns</li>";
-
-  const paragraphs = mdToHtml(report.content);
-
-  return `<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${report.clientName} - ${report.reportTypeLabel}</title>
-  <style>
-    body { margin: 0; font-family: Montserrat, Arial, sans-serif; background: #111113; color: #f6f7ff; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 56px; }
-    .hero { border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 20px; margin-bottom: 28px; }
-    .eyebrow { color: #E8912D; text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; font-weight: 700; }
-    h1 { margin: 10px 0 8px; font-size: 38px; line-height: 1.05; }
-    .sub { color: rgba(246,247,255,0.55); font-size: 14px; line-height: 1.7; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0; }
-    .card { background: #1a1a1f; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px; }
-    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: rgba(246,247,255,0.4); margin-bottom: 8px; }
-    .value { font-size: 24px; font-weight: 800; }
-    .section { margin-top: 24px; }
-    .section > h2 { font-size: 18px; margin: 0 0 12px; color: #E8912D; }
-    .ai-content h1 { font-size: 28px; font-weight: 800; color: #E8912D; margin: 32px 0 16px; line-height: 1.2; }
-    .ai-content h2 { font-size: 22px; font-weight: 700; color: #E8912D; margin: 28px 0 12px; line-height: 1.3; }
-    .ai-content h3 { font-size: 17px; font-weight: 700; color: rgba(246,247,255,0.9); margin: 22px 0 10px; line-height: 1.4; }
-    .ai-content h4 { font-size: 14px; font-weight: 700; color: rgba(246,247,255,0.8); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
-    .ai-content strong { color: rgba(246,247,255,0.95); font-weight: 700; }
-    ul { margin: 8px 0; padding-left: 20px; color: rgba(246,247,255,0.8); }
-    ol { margin: 8px 0; padding-left: 20px; color: rgba(246,247,255,0.8); }
-    li { margin-bottom: 6px; line-height: 1.7; }
-    p { color: rgba(246,247,255,0.78); line-height: 1.7; margin: 8px 0; }
-    hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 24px 0; }
-    .meta { display: flex; flex-wrap: wrap; gap: 10px; color: rgba(246,247,255,0.45); font-size: 12px; }
-    .tag { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(232,145,45,0.12); color: #f4c87d; }
-    @media (max-width: 800px) { .grid { grid-template-columns: repeat(2, 1fr); } h1 { font-size: 30px; } }
-    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .wrap { padding: 24px 16px 48px; } }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="hero">
-      <div class="eyebrow">Partenaire.io Report</div>
-      <h1>${escapeHtml(report.clientName)}</h1>
-      <div class="sub">${escapeHtml(report.reportTypeLabel)} · ${escapeHtml(report.period)} days · Generated ${escapeHtml(formatDate(report.generatedAt))}</div>
-      <div class="meta" style="margin-top:14px;">
-        <span class="tag">${escapeHtml(String(report.summary.campaigns))} campaigns</span>
-        <span class="tag">${escapeHtml(String(report.summary.activeCampaigns))} active</span>
-        <span class="tag">Spend ${escapeHtml(formatMoney(report.summary.spend))}</span>
-        <span class="tag">CPL ${escapeHtml(formatMoney(report.summary.cpl))}</span>
-        <span class="tag">ROAS ${escapeHtml(formatNumber(report.summary.roas, 1))}x</span>
+/* ── Reusable components ── */
+function ProgressBar({ steps, current }: { steps: StepId[]; current: number }) {
+  const pct = steps.length > 1 ? (current / (steps.length - 1)) * 100 : 0;
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ height: "100%", borderRadius: 2, background: `linear-gradient(90deg, ${C.orange}, ${C.orangeLight})` }}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+        {steps.map((s, i) => {
+          const done = i < current;
+          const active = i === current;
+          return (
+            <div key={s} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div style={{
+                width: active ? 28 : 8, height: 8, borderRadius: 4,
+                background: done ? C.orange : active ? C.orange : "rgba(255,255,255,0.08)",
+                transition: "all 0.3s ease",
+              }} />
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+                color: active ? C.orangeLight : done ? C.textMuted : C.textDim, fontFamily: font,
+              }}>{STEP_LABELS[s]}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
+  );
+}
 
-    <div class="grid">
-      <div class="card"><div class="label">Campaigns</div><div class="value">${escapeHtml(String(report.summary.campaigns))}</div></div>
-      <div class="card"><div class="label">Active</div><div class="value">${escapeHtml(String(report.summary.activeCampaigns))}</div></div>
-      <div class="card"><div class="label">Spend</div><div class="value">${escapeHtml(formatMoney(report.summary.spend))}</div></div>
-      <div class="card"><div class="label">ROAS</div><div class="value">${escapeHtml(formatNumber(report.summary.roas, 1))}x</div></div>
+function ContextChip({ client }: { client: Client | null }) {
+  if (!client) return null;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px",
+      borderRadius: 20, background: "rgba(232,145,45,0.08)", border: "1px solid rgba(232,145,45,0.2)",
+      fontSize: 12, fontWeight: 600, color: C.orangeLight, fontFamily: font,
+    }}>
+      <div style={{ width: 6, height: 6, borderRadius: 3, background: C.orange }} />
+      {client.name}{client.industry ? ` · ${client.industry}` : ""}
     </div>
+  );
+}
 
-    <div class="section">
-      <h2>Selected campaigns</h2>
-      <ul>${campaignLines}</ul>
+function QuestionTitle({ text, highlight }: { text: string; highlight: string }) {
+  const parts = text.split(new RegExp(`(${highlight})`, "i"));
+  return (
+    <h2 style={{ fontSize: 28, fontWeight: 800, color: "#fff", fontFamily: font, lineHeight: 1.3, marginBottom: 8, letterSpacing: "-0.02em" }}>
+      {parts.map((p, i) =>
+        p.toLowerCase() === highlight.toLowerCase()
+          ? <span key={i} style={{ color: C.orange }}>{p}</span>
+          : <span key={i}>{p}</span>
+      )}
+    </h2>
+  );
+}
+
+function OptionCard({ selected, icon: Icon, title, desc, onClick }: {
+  selected: boolean; icon: typeof BarChart3; title: string; desc: string; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 16, width: "100%",
+      padding: "18px 20px", borderRadius: 16, cursor: "pointer",
+      background: selected ? "rgba(232,145,45,0.08)" : C.card,
+      border: `1.5px solid ${selected ? "rgba(232,145,45,0.5)" : "transparent"}`,
+      transition: "all 0.2s ease", textAlign: "left", fontFamily: font,
+    }}
+    onMouseEnter={(e) => { if (!selected) e.currentTarget.style.borderColor = C.cardHover; }}
+    onMouseLeave={(e) => { if (!selected) e.currentTarget.style.borderColor = selected ? "rgba(232,145,45,0.5)" : "transparent"; }}
+    >
+      <div style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 10,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: selected ? "rgba(232,145,45,0.15)" : "rgba(255,255,255,0.04)",
+      }}>
+        <Icon size={18} color={selected ? C.orange : "rgba(255,255,255,0.35)"} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: selected ? "#fff" : "rgba(255,255,255,0.8)" }}>{title}</div>
+        <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{desc}</div>
+      </div>
+      <div style={{
+        width: 20, height: 20, borderRadius: 10, flexShrink: 0,
+        border: `2px solid ${selected ? C.orange : "rgba(255,255,255,0.12)"}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: selected ? C.orange : "transparent",
+      }}>
+        {selected && <Check size={12} color="#fff" />}
+      </div>
+    </button>
+  );
+}
+
+function PillSelect({ options, value, onChange }: { options: readonly { value: string; label: string }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      {options.map((opt) => (
+        <button key={opt.value} onClick={() => onChange(opt.value)} style={{
+          padding: "14px 28px", borderRadius: 14, cursor: "pointer", fontFamily: font,
+          fontSize: 15, fontWeight: 700,
+          background: value === opt.value ? "rgba(232,145,45,0.12)" : C.card,
+          border: `1.5px solid ${value === opt.value ? "rgba(232,145,45,0.5)" : "transparent"}`,
+          color: value === opt.value ? C.orangeLight : C.text,
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => { if (value !== opt.value) e.currentTarget.style.borderColor = C.cardHover; }}
+        onMouseLeave={(e) => { if (value !== opt.value) e.currentTarget.style.borderColor = "transparent"; }}
+        >{opt.label}</button>
+      ))}
     </div>
+  );
+}
 
-    <div class="section">
-      <h2>AI recommendations</h2>
-      <div class="ai-content">
-        ${paragraphs || "<p>No recommendations were generated yet.</p>"}
+function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit?: () => void }) {
+  return (
+    <div style={{
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+      padding: "14px 0", borderBottom: `1px solid ${C.border}`,
+    }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: font }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", fontFamily: font }}>{value || "—"}</span>
+        {onEdit && (
+          <button onClick={onEdit} style={{
+            fontSize: 11, color: C.orange, background: "none", border: "none",
+            cursor: "pointer", fontFamily: font, fontWeight: 600,
+          }}>Modifier</button>
+        )}
       </div>
     </div>
-  </div>
-</body>
-</html>`;
+  );
 }
 
-function makeId() {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `report-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function openReportDocument(report: ReportRecord) {
-  const win = window.open("", "_blank", "noopener,noreferrer");
-  if (!win) return;
-
-  win.document.open();
-  win.document.write(buildReportHtml(report));
-  win.document.close();
-}
-
-function downloadReportDocument(report: ReportRecord) {
-  const blob = new Blob([buildReportHtml(report)], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${report.clientName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${report.reportType}-${report.period}d-report.html`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
+/* ══════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════════ */
 export default function RapportsPage() {
+  /* ── Client data ── */
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [showClientPicker, setShowClientPicker] = useState(false);
-  const [reportType, setReportType] = useState("leadgen");
-  const [period, setPeriod] = useState("30");
-  const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
-  const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [reportText, setReportText] = useState("");
-  const [reportError, setReportError] = useState("");
-  const [recentReports, setRecentReports] = useState<ReportRecord[]>([]);
-  const [initialized, setInitialized] = useState(false);
 
-  const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+  /* ── Survey state ── */
+  const [step, setStep] = useState(0);
+  const [reportType, setReportType] = useState<ReportTypeKey | null>(null);
+  const [period, setPeriod] = useState("");
 
-  const summary = buildClientSummary(selectedClient);
-  const selectedCampaigns = summary.campaignsList.filter((campaign) => selectedCampaignIds.includes(campaign.id));
-  const reportTypeMeta = REPORT_TYPES.find((type) => type.value === reportType) ?? REPORT_TYPES[0];
-  const filteredClients = clients.filter((client) => client.name.toLowerCase().includes(search.toLowerCase())).slice(0, 10);
-  const openReport = reportText.trim().length > 0;
+  /* ── Generation ── */
+  const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [reportContent, setReportContent] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  const steps = ALL_STEPS;
+  const currentStepId = steps[step] ?? "client";
+
+  /* ── Load clients ── */
   useEffect(() => {
-    let mounted = true;
+    fetch("/api/client-hub/clients?show_hidden=true", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setClients(Array.isArray(d) ? d : []))
+      .catch(() => setClients([]));
+  }, []);
 
-    const loadClients = async () => {
-      try {
-        const response = await fetch(`${API}/api/client-hub/clients?show_hidden=true`, { credentials: "include" });
-        const data = await response.json();
-        if (!mounted) return;
-        setClients(Array.isArray(data) ? data : []);
-      } catch {
-        if (mounted) setClients([]);
-      }
-    };
+  /* ── Filtered client list ── */
+  const filtered = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    const list = q ? clients.filter((c) => c.name.toLowerCase().includes(q)) : clients;
+    return list.slice(0, 8);
+  }, [clients, deferredSearch]);
 
-    loadClients();
-
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setRecentReports(parsed.slice(0, 6));
-        }
-      }
-    } catch {
-      setRecentReports([]);
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const clientParam = params.get("client");
-    if (clientParam) setSearch(clientParam);
-    const typeParam = params.get("type");
-    if (typeParam && REPORT_TYPES.some((type) => type.value === typeParam)) setReportType(typeParam);
-    const periodParam = params.get("period");
-    if (periodParam && PERIODS.some((item) => item.value === periodParam)) setPeriod(periodParam);
-
-    setInitialized(true);
-
-    return () => {
-      mounted = false;
-    };
-  }, [API]);
-
+  /* ── URL prefill ── */
   useEffect(() => {
-    if (!initialized || selectedClient || !search.trim()) return;
-    const exactMatch = clients.find((client) => client.name.toLowerCase() === search.trim().toLowerCase());
-    if (exactMatch) {
-      selectClient(exactMatch);
+    if (!clients.length) return;
+    const p = new URLSearchParams(window.location.search).get("client");
+    if (p) {
+      const match = clients.find((c) => c.name.toLowerCase() === p.toLowerCase());
+      if (match) selectClient(match);
     }
-  }, [clients, initialized, search, selectedClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
 
-  useEffect(() => {
-    if (!selectedClient) return;
-    setSelectedCampaignIds(summary.campaignsList.filter((campaign) => campaign.status === "active").map((campaign) => campaign.id));
-    if (!summary.campaignsList.length) setSelectedCampaignIds([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClient?.id]);
-
-  function persistRecentReports(nextReports: ReportRecord[]) {
-    setRecentReports(nextReports);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextReports.slice(0, 6)));
-    } catch {
-      // Ignore storage issues in the browser.
-    }
-  }
-
-  function selectClient(client: Client) {
+  /* ── Select client ── */
+  const selectClient = useCallback((client: Client) => {
     setSelectedClient(client);
     setSearch(client.name);
-    setShowClientPicker(false);
-    setReportError("");
-    setReportText("");
+    setStep(1);
+  }, []);
 
-    const campaigns = defaultCampaigns(client);
-    const activeCampaigns = campaigns.filter((campaign) => campaign.status === "active");
-    setSelectedCampaignIds((activeCampaigns.length ? activeCampaigns : campaigns.slice(0, 2)).map((campaign) => campaign.id));
+  /* ── Navigation ── */
+  const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const goTo = (idx: number) => { if (idx <= step) setStep(idx); };
+
+  /* ── Report type label helper ── */
+  const reportTypeLabel = REPORT_TYPES.find((t) => t.key === reportType)?.title ?? "";
+  const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? "";
+
+  /* ── Build context for API ── */
+  function buildContext() {
+    if (!selectedClient) return "";
+    const lines = [
+      `Client: ${selectedClient.name}`,
+      `Type: ${reportType}`,
+      `Periode: ${period} jours`,
+      selectedClient.industry ? `Industry: ${selectedClient.industry}` : "",
+      selectedClient.website ? `Website: ${selectedClient.website}` : "",
+    ].filter(Boolean);
+    return lines.join("\n");
   }
 
-  async function generateReport() {
-    if (!selectedClient) return;
+  /* ── Generate report ── */
+  async function generate() {
+    if (!selectedClient || !reportType || !period) return;
+    setGenerating(true);
+    setGenProgress(0);
+    setError(null);
+    setReportContent(null);
 
-    setLoading(true);
-    setReportError("");
-    setReportText("");
+    const progressInterval = setInterval(() => {
+      setGenProgress((p: number) => {
+        if (p >= 95) { clearInterval(progressInterval); return 95; }
+        const increment = p < 30 ? 3 : p < 60 ? 2 : p < 80 ? 1.5 : 0.5;
+        return Math.min(95, p + increment + Math.random() * 2);
+      });
+    }, 600);
 
     try {
-      const selectedCampaignObjects = summary.campaignsList.filter((campaign) => selectedCampaignIds.includes(campaign.id));
-      const context = buildContext(selectedClient, reportType, period, selectedCampaignObjects, notes.trim());
-
-      const response = await fetch("/api/recommendations", {
+      const r = await fetch("/api/recommendations", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           client: selectedClient.name,
           reportType,
-          context,
+          context: buildContext(),
         }),
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error(`Report request failed (${response.status})`);
-      }
+      if (!r.ok || !r.body) throw new Error(`Erreur ${r.status}`);
 
-      const reader = response.body.getReader();
+      const reader = r.body.getReader();
       const decoder = new TextDecoder();
       let content = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         content += decoder.decode(value, { stream: true });
-        setReportText(content);
       }
-
-      const now = new Date().toISOString();
-      const record: ReportRecord = {
-        id: makeId(),
-        clientName: selectedClient.name,
-        reportType,
-        reportTypeLabel: reportTypeMeta.label,
-        period,
-        selectedCampaigns: selectedCampaignObjects.map((campaign) => campaign.name),
-        generatedAt: now,
-        content,
-        context,
-        summary: {
-          campaigns: summary.campaigns,
-          activeCampaigns: summary.activeCampaigns,
-          spend: summary.spend,
-          cpl: summary.cpl,
-          roas: summary.roas,
-        },
-      };
-
-      const nextReports = [record, ...recentReports.filter((item) => item.id !== record.id)].slice(0, 6);
-      persistRecentReports(nextReports);
-    } catch (error) {
-      setReportError(error instanceof Error ? error.message : "Unable to generate report");
+      setReportContent(content);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
-      setLoading(false);
+      clearInterval(progressInterval);
+      setGenProgress(100);
+      setTimeout(() => setGenerating(false), 300);
     }
   }
 
-  function openCurrentReport() {
-    if (!selectedClient || !openReport) return;
-
-    const report: ReportRecord = {
-      id: makeId(),
-      clientName: selectedClient.name,
-      reportType,
-      reportTypeLabel: reportTypeMeta.label,
-      period,
-      selectedCampaigns: selectedCampaigns.map((campaign) => campaign.name),
-      generatedAt: new Date().toISOString(),
-      content: reportText,
-      context: buildContext(selectedClient, reportType, period, selectedCampaigns, notes.trim()),
-      summary: {
-        campaigns: summary.campaigns,
-        activeCampaigns: summary.activeCampaigns,
-        spend: summary.spend,
-        cpl: summary.cpl,
-        roas: summary.roas,
-      },
-    };
-
-    openReportDocument(report);
+  /* ── Open report in new tab ── */
+  function viewReport() {
+    if (!reportContent || !selectedClient) return;
+    const html = buildPrintableHtml(
+      reportContent,
+      `Rapport ${reportTypeLabel}`,
+      selectedClient.name,
+      new Date().toLocaleDateString("fr-CA"),
+      "rapport_performance",
+    );
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
   }
 
-  function downloadCurrentReport() {
-    if (!selectedClient || !openReport) return;
-
-    const report: ReportRecord = {
-      id: makeId(),
-      clientName: selectedClient.name,
-      reportType,
-      reportTypeLabel: reportTypeMeta.label,
-      period,
-      selectedCampaigns: selectedCampaigns.map((campaign) => campaign.name),
-      generatedAt: new Date().toISOString(),
-      content: reportText,
-      context: buildContext(selectedClient, reportType, period, selectedCampaigns, notes.trim()),
-      summary: {
-        campaigns: summary.campaigns,
-        activeCampaigns: summary.activeCampaigns,
-        spend: summary.spend,
-        cpl: summary.cpl,
-        roas: summary.roas,
-      },
-    };
-
-    downloadReportDocument(report);
+  /* ── Download as DOCX ── */
+  function downloadDocx() {
+    if (!selectedClient) return;
+    window.open(`/api/strategy/export-docx/${encodeURIComponent(selectedClient.name)}`, "_blank");
   }
 
-  function loadRecentReport(report: ReportRecord) {
-    const matchedClient = clients.find((client) => client.name === report.clientName) ?? null;
-    setSelectedClient((current) => current?.name === report.clientName ? current : matchedClient);
-    setSearch(report.clientName);
-    setReportType(report.reportType);
-    setPeriod(report.period);
-    setReportText(report.content);
-    if (matchedClient) {
-      const matchedCampaigns = defaultCampaigns(matchedClient).filter((campaign) => report.selectedCampaigns.includes(campaign.name));
-      setSelectedCampaignIds(matchedCampaigns.map((campaign) => campaign.id));
-    } else {
-      setSelectedCampaignIds([]);
-    }
+  /* ── Download as PDF ── */
+  function downloadPdf() {
+    if (!selectedClient) return;
+    window.open(`/api/strategy/export-pdf/${encodeURIComponent(selectedClient.name)}`, "_blank");
   }
 
+  /* ══════════════════════════ RENDER ══════════════════════════ */
   return (
-    <div className="min-h-screen">
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: font }}>
       <Nav />
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
-        <section className="mb-6 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#17171b]/95 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-          <div className="grid gap-6 p-5 md:p-8 xl:grid-cols-[1.35fr_0.65fr]">
-            <div className="relative overflow-hidden rounded-[24px] border border-white/[0.06] bg-[linear-gradient(135deg,rgba(232,145,45,0.12),rgba(255,255,255,0.02))] p-5 md:p-6">
-              <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#E8912D]/10 blur-3xl" />
-              <Badge className="mb-4 border-[#E8912D]/20 bg-[#E8912D]/12 text-[#f4c87d]">
-                Rapports IA
-              </Badge>
-              <h1 className="max-w-2xl text-3xl font-extrabold tracking-[-0.04em] text-white md:text-5xl">
-                Rapports & Recommandations
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/50 md:text-base">
-                Sélectionnez un client, choisissez les campagnes, générez un rapport IA en temps réel.
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "40px 20px 80px" }}>
+
+        {/* Context chip */}
+        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <ContextChip client={selectedClient} />
+          {step > 0 && !reportContent && (
+            <span style={{ fontSize: 11, color: C.textDim, fontFamily: font }}>
+              Étape {step + 1} / {steps.length}
+            </span>
+          )}
+        </div>
+
+        {/* Progress bar (hidden on step 0 and after generation) */}
+        {step > 0 && !reportContent && <ProgressBar steps={steps} current={step} />}
+
+        {/* Error */}
+        {error && (
+          <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5", fontSize: 13, fontFamily: font }}>
+            {error}
+          </div>
+        )}
+
+        <AnimatePresence mode="wait">
+
+          {/* ── STEP 1: CLIENT ── */}
+          {currentStepId === "client" && !reportContent && (
+            <motion.div key="client" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quel client?" highlight="client" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Recherche et sélectionne en un clic.
               </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { label: "Clients chargés", value: clients.length || "—" },
-                  { label: "Campagnes en cours", value: summary.campaigns || "—" },
-                  { label: "Campagnes actives", value: summary.activeCampaigns || "—" },
-                  { label: "Rapports sauvegardés", value: recentReports.length || "—" },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.03] p-4">
-                    <div className="text-[10px] uppercase tracking-[0.28em] text-white/32">{item.label}</div>
-                    <div className="mt-2 text-2xl font-bold text-white">{item.value}</div>
-                  </div>
+
+              {/* Search input */}
+              <div style={{ position: "relative", marginBottom: 16 }}>
+                <Search size={16} color={C.textMuted} style={{ position: "absolute", left: 16, top: 14 }} />
+                <input
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setSelectedClient(null); }}
+                  placeholder="Rechercher un client..."
+                  autoFocus
+                  style={{
+                    width: "100%", padding: "12px 16px 12px 44px", borderRadius: 14,
+                    background: C.card, border: `1.5px solid ${C.border}`, color: "#fff",
+                    fontSize: 15, fontFamily: font, outline: "none",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,145,45,0.4)"; }}
+                  onBlur={(e) => { setTimeout(() => { e.currentTarget.style.borderColor = C.border; }, 200); }}
+                />
+              </div>
+
+              {/* Client list */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {filtered.map((c) => (
+                  <button key={c.id} onClick={() => selectClient(c)} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                    background: selectedClient?.id === c.id ? "rgba(232,145,45,0.06)" : C.card,
+                    border: `1.5px solid ${selectedClient?.id === c.id ? "rgba(232,145,45,0.3)" : "transparent"}`,
+                    transition: "all 0.15s ease", textAlign: "left", width: "100%", fontFamily: font,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.cardHover; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = selectedClient?.id === c.id ? "rgba(232,145,45,0.3)" : "transparent"; }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.name}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                        {[c.industry, c.website].filter(Boolean).join(" · ") || "Aucune info"}
+                      </div>
+                    </div>
+                    <ChevronRight size={14} color={C.textDim} />
+                  </button>
+                ))}
+                {filtered.length === 0 && search && (
+                  <p style={{ textAlign: "center", padding: 20, color: C.textDim, fontSize: 13 }}>Aucun client trouvé</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP 2: REPORT TYPE ── */}
+          {currentStepId === "type" && !reportContent && (
+            <motion.div key="type" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quel type de rapport?" highlight="type" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Choisis le modèle qui correspond à ton client.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {REPORT_TYPES.map((t) => (
+                  <OptionCard
+                    key={t.key}
+                    selected={reportType === t.key}
+                    icon={t.icon}
+                    title={t.title}
+                    desc={t.desc}
+                    onClick={() => { setReportType(t.key); setTimeout(next, 300); }}
+                  />
                 ))}
               </div>
-            </div>
+              <div style={{ marginTop: 24 }}>
+                <button onClick={back} style={{
+                  fontSize: 13, color: C.textMuted, background: "none", border: "none",
+                  cursor: "pointer", fontFamily: font, fontWeight: 500,
+                }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
 
-            <Card className="border-white/[0.06] bg-[#1a1a1f]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm tracking-[-0.02em] text-white">Contexte du rapport</CardTitle>
-                <p className="text-xs text-white/35">
-                  {selectedClient ? "Données tirées du client et des campagnes en temps réel." : "Sélectionnez un client pour charger le contexte."}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
-                  <div className="text-[10px] uppercase tracking-[0.28em] text-white/30">Client</div>
-                  <div className="mt-2 text-lg font-semibold text-white">{selectedClient?.name ?? "Aucun client sélectionné"}</div>
-                  <div className="mt-1 text-xs text-white/45">
-                    {selectedClient?.industry || "Industrie non définie"}
-                    {selectedClient?.website ? ` · ${selectedClient.website}` : ""}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Spend", value: formatMoney(summary.spend) },
-                    { label: "CPL", value: formatMoney(summary.cpl) },
-                    { label: "ROAS", value: `${formatNumber(summary.roas, 1)}x` },
-                    { label: "Retainer", value: selectedClient?.retainer_monthly ? formatMoney(selectedClient.retainer_monthly) : "—" },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-3">
-                      <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
-                      <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button
-                    onClick={generateReport}
-                    disabled={!selectedClient || loading}
-                    className="bg-[#E8912D] text-white hover:bg-[#E8912D]/85"
-                  >
-                    {loading ? "Generating..." : "Generate report"}
-                  </Button>
-                  <Button
-                    onClick={openCurrentReport}
-                    disabled={!openReport}
-                    variant="outline"
-                    className="border-white/[0.06] text-white/60 hover:bg-white/[0.05]"
-                  >
-                    Open report
-                  </Button>
-                  <Button
-                    onClick={downloadCurrentReport}
-                    disabled={!openReport}
-                    variant="outline"
-                    className="border-white/[0.06] text-white/60 hover:bg-white/[0.05]"
-                  >
-                    Download HTML
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+          {/* ── STEP 3: PERIOD ── */}
+          {currentStepId === "period" && !reportContent && (
+            <motion.div key="period" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quelle période?" highlight="période" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                La fenêtre d'analyse pour le rapport.
+              </p>
+              <PillSelect options={PERIODS} value={period} onChange={(v) => { setPeriod(v); setTimeout(next, 250); }} />
+              <div style={{ marginTop: 24 }}>
+                <button onClick={back} style={{
+                  fontSize: 13, color: C.textMuted, background: "none", border: "none",
+                  cursor: "pointer", fontFamily: font, fontWeight: 500,
+                }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
 
-        <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-          <div className="space-y-6">
-            <Card className="border-white/[0.06] bg-[#1a1a1f]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base tracking-[-0.02em] text-white">Build the report</CardTitle>
-                <p className="text-sm text-white/35">Search a client, select the campaigns, then generate recommendations with live context.</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-                  <div className="relative">
-                    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-white/38">Client</label>
-                    <Input
-                      value={search}
-                      onChange={(event) => {
-                        setSearch(event.target.value);
-                        setShowClientPicker(true);
-                        setSelectedClient(null);
-                        setReportText("");
-                      }}
-                      onFocus={() => setShowClientPicker(true)}
-                      placeholder="Search a client..."
-                      className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/25"
-                    />
-                    {showClientPicker && search.trim() && (
-                      <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-[#111113] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map((client) => {
-                            const clientCampaigns = defaultCampaigns(client);
-                            const activeCampaignCount = clientCampaigns.filter((campaign) => campaign.status === "active").length;
-                            return (
-                              <button
-                                key={client.id}
-                                type="button"
-                                onClick={() => selectClient(client)}
-                                className="flex w-full items-center justify-between gap-4 border-b border-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.04] last:border-b-0"
-                              >
-                                <div className="min-w-0">
-                                  <div className="truncate text-sm font-semibold text-white">{client.name}</div>
-                                  <div className="mt-1 text-[11px] text-white/35">
-                                    {client.industry || "No industry"} · {clientCampaigns.length} campaigns · {activeCampaignCount} active
-                                  </div>
-                                </div>
-                                <Badge className="border-white/[0.08] bg-white/[0.03] text-white/50">
-                                  Select
-                                </Badge>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <div className="px-4 py-6 text-center text-sm text-white/30">
-                            No live client matched that search.
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+          {/* ── STEP 4: SUMMARY ── */}
+          {currentStepId === "summary" && !reportContent && (
+            <motion.div key="summary" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Résumé avant génération" highlight="génération" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 24, fontFamily: font }}>
+                Vérifie les informations. Clique sur « Modifier » pour ajuster.
+              </p>
 
-                  <div>
-                    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-white/38">Report type</label>
-                    <select
-                      value={reportType}
-                      onChange={(event) => setReportType(event.target.value)}
-                      className="w-full rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white outline-none"
-                    >
-                      {REPORT_TYPES.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="mt-2 text-xs text-white/32">{reportTypeMeta.description}</div>
-                  </div>
-                </div>
+              <div style={{ background: C.card, borderRadius: 20, padding: "8px 24px", marginBottom: 24, border: `1px solid ${C.border}` }}>
+                <SummaryRow label="Client" value={selectedClient?.name ?? ""} onEdit={() => goTo(0)} />
+                <SummaryRow label="Type" value={reportTypeLabel} onEdit={() => goTo(1)} />
+                <SummaryRow label="Période" value={periodLabel} onEdit={() => goTo(2)} />
+              </div>
 
-                <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="block text-[11px] font-bold uppercase tracking-[0.24em] text-white/38">Period</label>
-                    <span className="text-[11px] text-white/28">Matches the V1 period selector pattern.</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {PERIODS.map((item) => (
-                      <Button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setPeriod(item.value)}
-                        variant={period === item.value ? "default" : "outline"}
-                        size="sm"
-                        className={period === item.value ? "bg-[#E8912D] text-white" : "border-white/[0.06] text-white/55 hover:bg-white/[0.05]"}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="block text-[11px] font-bold uppercase tracking-[0.24em] text-white/38">Campaigns</label>
-                    <span className="text-[11px] text-white/28">
-                      {selectedCampaignIds.length ? `${selectedCampaignIds.length} selected` : "Use the client metadata if available"}
-                    </span>
-                  </div>
-                  {summary.campaignsList.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {summary.campaignsList.map((campaign) => {
-                        const selected = selectedCampaignIds.includes(campaign.id);
-                        return (
-                          <button
-                            key={campaign.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCampaignIds((current) =>
-                                current.includes(campaign.id)
-                                  ? current.filter((id) => id !== campaign.id)
-                                  : [...current, campaign.id],
-                              );
-                            }}
-                            className={`rounded-full border px-3 py-2 text-left text-[12px] transition ${
-                              selected
-                                ? "border-[#E8912D]/30 bg-[#E8912D]/12 text-[#f4c87d]"
-                                : "border-white/[0.08] bg-white/[0.03] text-white/55 hover:bg-white/[0.05]"
-                            }`}
-                          >
-                            <div className="font-medium">{campaign.name}</div>
-                            <div className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-white/28">
-                              {campaign.status || "unknown"}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/35">
-                      No campaign metadata is available for this client yet. The report can still be generated from the client-level context.
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-white/38">Extra context</label>
-                  <Textarea
-                    rows={4}
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
-                    placeholder="Add context from calls, launch notes, client concerns, or anything the report should account for..."
-                    className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/25"
-                  />
-                </div>
-
-                {reportError && (
-                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-200">
-                    {reportError}
-                  </div>
+              {/* Generate button */}
+              <button
+                onClick={generate}
+                disabled={generating}
+                style={{
+                  width: "100%", padding: "16px 24px", borderRadius: 16, cursor: generating ? "wait" : "pointer",
+                  fontFamily: font, fontSize: 16, fontWeight: 800, color: "#fff", border: "none",
+                  background: generating ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, ${C.orange}, #c46e0a)`,
+                  boxShadow: generating ? "none" : "0 8px 32px rgba(232,145,45,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  transition: "all 0.3s ease",
+                }}
+              >
+                {generating ? (
+                  <><LoaderCircle size={18} className="animate-spin" /> Création en cours · {Math.round(genProgress)}%</>
+                ) : (
+                  <><Sparkles size={18} /> Générer le rapport</>
                 )}
+              </button>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={generateReport}
-                    disabled={!selectedClient || loading}
-                    className="bg-[#E8912D] text-white hover:bg-[#E8912D]/85"
-                  >
-                    {loading ? "Generating report..." : "Generate report"}
-                  </Button>
-                  <Button
-                    onClick={openCurrentReport}
-                    disabled={!openReport}
-                    variant="outline"
-                    className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
-                  >
-                    Open report
-                  </Button>
-                  <Button
-                    onClick={downloadCurrentReport}
-                    disabled={!openReport}
-                    variant="outline"
-                    className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
-                  >
-                    Download HTML
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setSelectedClient(null);
-                      setSearch("");
-                      setSelectedCampaignIds([]);
-                      setReportText("");
-                      setReportError("");
+              <div style={{ marginTop: 16, textAlign: "center" }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── OUTPUT: View / Download buttons ── */}
+          {reportContent && (
+            <motion.div key="output" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <div style={{ textAlign: "center", padding: "48px 0" }}>
+                <div style={{ marginBottom: 12 }}>
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: font, letterSpacing: "-0.02em" }}>
+                    Rapport <span style={{ color: C.orange }}>{reportTypeLabel}</span>
+                  </h2>
+                  <p style={{ fontSize: 13, color: C.textMuted, marginTop: 4, fontFamily: font }}>
+                    {selectedClient?.name} · {periodLabel}
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 32, maxWidth: 360, margin: "32px auto 0" }}>
+                  {/* View HTML */}
+                  <button onClick={viewReport} style={{
+                    width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                    fontFamily: font, fontSize: 16, fontWeight: 800, color: "#fff", border: "none",
+                    background: `linear-gradient(135deg, ${C.orange}, #c46e0a)`,
+                    boxShadow: "0 8px 32px rgba(232,145,45,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  }}>
+                    <Eye size={18} /> Voir le rapport
+                  </button>
+
+                  {/* Download DOCX */}
+                  <button onClick={downloadDocx} style={{
+                    width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                    fontFamily: font, fontSize: 16, fontWeight: 800, color: C.orangeLight,
+                    border: `1px solid rgba(232,145,45,0.25)`,
+                    background: "rgba(232,145,45,0.08)",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    boxSizing: "border-box" as const,
+                  }}>
+                    <FileDown size={18} /> Télécharger DOCX
+                  </button>
+
+                  {/* Download PDF */}
+                  <button onClick={downloadPdf} style={{
+                    width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
+                    fontFamily: font, fontSize: 16, fontWeight: 800, color: "#f4b85c",
+                    border: "1px solid rgba(244,184,92,0.25)",
+                    background: "rgba(244,184,92,0.06)",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    boxSizing: "border-box" as const,
+                  }}>
+                    <FileText size={18} /> Télécharger PDF
+                  </button>
+
+                  {/* New report button */}
+                  <button
+                    onClick={() => { setReportContent(null); setStep(0); setReportType(null); setPeriod(""); setSelectedClient(null); setSearch(""); setError(null); }}
+                    style={{
+                      padding: "12px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                      color: C.textMuted, background: "rgba(255,255,255,0.04)",
+                      border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: font,
+                      marginTop: 8,
                     }}
-                    variant="outline"
-                    className="border-white/[0.06] text-white/35 hover:bg-white/[0.05]"
                   >
-                    Reset
-                  </Button>
+                    Nouveau rapport
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-white/[0.06] bg-[#1a1a1f]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base tracking-[-0.02em] text-white">Report preview</CardTitle>
-                <p className="text-sm text-white/35">
-                  This is the exact content that will open or download, so the workflow stays honest.
-                </p>
-              </CardHeader>
-              <CardContent>
-                {openReport ? (
-                  <div className="space-y-5">
-                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="border-[#E8912D]/20 bg-[#E8912D]/12 text-[#f4c87d]">
-                          {reportTypeMeta.label}
-                        </Badge>
-                        <Badge className="border-white/[0.08] bg-white/[0.03] text-white/45">
-                          {period} day window
-                        </Badge>
-                        <Badge className="border-white/[0.08] bg-white/[0.03] text-white/45">
-                          {formatDate(new Date().toISOString())}
-                        </Badge>
-                      </div>
-                      <div className="mt-4 text-2xl font-bold tracking-[-0.03em] text-white">
-                        {selectedClient?.name}
-                      </div>
-                      <div className="mt-1 text-sm text-white/40">
-                        {selectedClient?.industry || "No industry provided"}
-                        {selectedCampaigns.length ? ` · ${selectedCampaigns.length} selected campaigns` : ""}
-                      </div>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-3">
-                      {[
-                        { label: "Campaigns", value: summary.campaigns },
-                        { label: "Active", value: summary.activeCampaigns },
-                        { label: "Spend", value: formatMoney(summary.spend) },
-                      ].map((item) => (
-                        <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
-                          <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
-                          <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/32">
-                        Recommendations
-                      </div>
-                      <div
-                        className="mt-3 text-sm leading-7 text-white/70 [&>h1]:text-2xl [&>h1]:font-extrabold [&>h1]:text-[#E8912D] [&>h1]:mt-6 [&>h1]:mb-3 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[#E8912D] [&>h2]:mt-5 [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-white/90 [&>h3]:mt-4 [&>h3]:mb-2 [&>h4]:text-sm [&>h4]:font-bold [&>h4]:text-white/80 [&>h4]:mt-3 [&>h4]:mb-1 [&>h4]:uppercase [&>h4]:tracking-wider [&_strong]:text-white/95 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:my-2 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:my-2 [&_li]:mb-1 [&>hr]:border-white/[0.06] [&>hr]:my-5"
-                        dangerouslySetInnerHTML={{ __html: mdToHtml(reportText) }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-8 text-center text-sm text-white/30">
-                    Generate a report to see the preview here.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <aside className="space-y-6">
-            <Card className="border-white/[0.06] bg-[#1a1a1f]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm tracking-[-0.02em] text-white">Client summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {selectedClient ? (
-                  <>
-                    <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4">
-                      <div className="text-lg font-semibold text-white">{selectedClient.name}</div>
-                      <div className="mt-1 text-xs text-white/42">
-                        {selectedClient.industry || "No industry"}{selectedClient.website ? ` · ${selectedClient.website}` : ""}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Badge className="border-white/[0.08] bg-white/[0.03] text-white/50">
-                          {summary.campaigns} campaigns
-                        </Badge>
-                        <Badge className="border-white/[0.08] bg-white/[0.03] text-white/50">
-                          {summary.activeCampaigns} active
-                        </Badge>
-                        {selectedClient.status && (
-                          <Badge className="border-[#E8912D]/20 bg-[#E8912D]/12 text-[#f4c87d]">
-                            {selectedClient.status}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: "Spend", value: formatMoney(summary.spend) },
-                        { label: "CPL", value: formatMoney(summary.cpl) },
-                        { label: "ROAS", value: `${formatNumber(summary.roas, 1)}x` },
-                        { label: "Retainer", value: selectedClient.retainer_monthly ? formatMoney(selectedClient.retainer_monthly) : "—" },
-                      ].map((item) => (
-                        <div key={item.label} className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-3">
-                          <div className="text-[10px] uppercase tracking-[0.24em] text-white/28">{item.label}</div>
-                          <div className="mt-2 text-lg font-bold text-white">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {summary.flags.length > 0 && (
-                      <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-red-500/20 bg-red-500/8 p-4">
-                        <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-red-200">
-                          Active flags
-                        </div>
-                        <div className="mt-3 space-y-2">
-                          {summary.flags.map((flag) => (
-                            <div key={flag} className="rounded-xl border border-red-500/15 bg-black/15 px-3 py-2 text-sm text-red-100">
-                              {flag}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
-                    Search and select a client to pull in their live report context.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-white/[0.06] bg-[#1a1a1f]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm tracking-[-0.02em] text-white">Recent reports</CardTitle>
-                <p className="text-xs text-white/35">Stored locally so the page keeps a useful workflow history.</p>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {recentReports.length > 0 ? (
-                  recentReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-white/[0.06] bg-white/[0.03] p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold text-white">{report.clientName}</div>
-                          <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/28">
-                            {report.reportTypeLabel} · {report.period}d
-                          </div>
-                        </div>
-                        <Badge className="border-white/[0.08] bg-white/[0.03] text-white/45">
-                          {formatDate(report.generatedAt)}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                          onClick={() => {
-                            loadRecentReport(report);
-                            openReportDocument(report);
-                          }}
-                          size="sm"
-                          className="bg-[#E8912D] text-white hover:bg-[#E8912D]/85"
-                        >
-                          Open
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            loadRecentReport(report);
-                            downloadReportDocument(report);
-                          }}
-                          size="sm"
-                          variant="outline"
-                          className="border-white/[0.06] text-white/55 hover:bg-white/[0.05]"
-                        >
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border hover:border-white/[0.15] transition-all duration-200 border-dashed border-white/[0.12] bg-white/[0.02] p-4 text-sm text-white/32">
-                    No recent reports yet. Generate one and it will appear here.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </aside>
-        </section>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
