@@ -79,11 +79,14 @@ const STEP_LABELS: Record<StepId, string> = {
 };
 
 /* ── Report type options ── */
-type ReportTypeKey = "leadgen" | "ecommerce" | "coach";
+type ReportTypeKey = "leadgen" | "ecommerce" | "coach" | "multicanal" | "social" | "video";
 const REPORT_TYPES: { key: ReportTypeKey; icon: typeof BarChart3; title: string; desc: string }[] = [
   { key: "leadgen", icon: BarChart3, title: "Lead Gen", desc: "Pipeline, bookings, CPL, qualité des leads" },
   { key: "ecommerce", icon: ShoppingCart, title: "E-commerce", desc: "ATC, checkout, achats, revenue, ROAS" },
   { key: "coach", icon: GraduationCap, title: "Coaching", desc: "Applications, appels, closes, cash collected" },
+  { key: "multicanal", icon: TrendingUp, title: "Multi-canal", desc: "Meta Ads + Google Ads combinés, vue globale" },
+  { key: "social", icon: Users, title: "Réseaux sociaux", desc: "Facebook, Instagram, TikTok organique + paid" },
+  { key: "video", icon: Activity, title: "Vidéo / Contenu", desc: "Performance vidéo, vues, engagement, ROI contenu" },
 ];
 
 const PERIODS = [
@@ -360,11 +363,7 @@ export default function RapportsPage() {
     setReportContent(null);
     setShowData(false);
     setAiLoading(false);
-    setTimeout(() => {
-      setGenProgress(100);
-      setGenerating(false);
-      setShowData(true);
-    // Also fetch Google Ads data for this client
+    // Fetch Google Ads data for this client
     if (selectedClient?.id) {
       setGoogleAdsLoading(true);
       fetch("/api/google-ads/by-client/" + selectedClient.id + "?days=" + (period || "30"), { credentials: "include" })
@@ -372,6 +371,10 @@ export default function RapportsPage() {
         .then(d => { setGoogleAdsData(d); setGoogleAdsLoading(false); })
         .catch(() => setGoogleAdsLoading(false));
     }
+    setTimeout(() => {
+      setGenProgress(100);
+      setGenerating(false);
+      setShowData(true);
     }, 800);
   }
 
