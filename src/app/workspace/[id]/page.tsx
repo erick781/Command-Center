@@ -65,7 +65,7 @@ const DELIVERABLE_TYPES: DeliverableType[] = [
 // ─── CONTENT GENERATION ─────────────────────────────────────────────────
 interface ClientData {
   id: string; name: string; industry?: string; status?: string;
-  health_score?: number; meta_data?: any; retainer_monthly?: number;
+  health_score?: number; meta_data?: any; retainer_monthly?: number; facebook_url?: string; instagram_url?: string; tiktok_url?: string; youtube_url?: string; linkedin_url?: string;
 }
 
 async function generateContent(
@@ -213,6 +213,8 @@ export default function WorkspacePage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [notes, setNotes] = useState('');
+  const [socialUrls, setSocialUrls] = useState<{facebook_url?: string; instagram_url?: string; tiktok_url?: string; youtube_url?: string; linkedin_url?: string}>({});
+  const [savingSocials, setSavingSocials] = useState(false);
   const [googleAds, setGoogleAds] = useState<any>(null);
   const [savingNotes, setSavingNotes] = useState(false);
 
@@ -227,6 +229,13 @@ export default function WorkspacePage() {
         if (!found) throw new Error('Client introuvable');
         setClient(found);
         setNotes(found.meta_data?.notes || '');
+        setSocialUrls({
+          facebook_url: found.facebook_url || '',
+          instagram_url: found.instagram_url || '',
+          tiktok_url: found.tiktok_url || '',
+          youtube_url: found.youtube_url || '',
+          linkedin_url: found.linkedin_url || '',
+        });
         // Fetch Google Ads data
         fetch('/api/google-ads/by-client/' + clientId + '?days=30', { credentials: 'include' })
           .then(r => r.json())
@@ -594,6 +603,50 @@ export default function WorkspacePage() {
                   className="mt-4 px-6 py-2.5 rounded-xl bg-[#E8912D] text-white text-sm font-medium
                     hover:bg-[#d07a1a] disabled:opacity-40 transition-all">
                   {savingNotes ? 'Sauvegarde…' : 'Sauvegarder'}
+                </motion.button>
+              </div>
+
+
+              {/* Social Media URLs */}
+              <div className="rounded-2xl bg-[#1a1a1f] p-6">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">{"R\u00e9seaux sociaux"}</p>
+                <p className="text-xs text-gray-700 mb-4">{"URLs des comptes pour le tracking automatique."}</p>
+                <div className="space-y-3">
+                  {[
+                    { key: 'facebook_url', label: 'Facebook', placeholder: 'https://facebook.com/...' },
+                    { key: 'instagram_url', label: 'Instagram', placeholder: 'https://instagram.com/...' },
+                    { key: 'tiktok_url', label: 'TikTok', placeholder: 'https://tiktok.com/@...' },
+                    { key: 'youtube_url', label: 'YouTube', placeholder: 'https://youtube.com/...' },
+                    { key: 'linkedin_url', label: 'LinkedIn', placeholder: 'https://linkedin.com/...' },
+                  ].map((field) => (
+                    <div key={field.key}>
+                      <label className="text-xs text-gray-500 mb-1 block">{field.label}</label>
+                      <input
+                        type="url"
+                        value={(socialUrls as any)[field.key] || ''}
+                        onChange={(e) => setSocialUrls(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5
+                          text-sm text-white placeholder-gray-700 focus:border-[#E8912D]/50 focus:outline-none transition-colors"
+                        placeholder={field.placeholder}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <motion.button
+                  onClick={async () => {
+                    if (!client) return;
+                    setSavingSocials(true);
+                    try {
+                      await supaRest('PATCH', 'clients?id=eq.' + clientId, socialUrls);
+                      setClient({ ...client, ...socialUrls });
+                    } catch (e) { console.error(e); }
+                    setSavingSocials(false);
+                  }}
+                  disabled={savingSocials}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                  className="mt-4 px-6 py-2.5 rounded-xl bg-[#E8912D] text-white text-sm font-medium
+                    hover:bg-[#d07a1a] disabled:opacity-40 transition-all">
+                  {savingSocials ? 'Sauvegarde...' : 'Sauvegarder les r\u00e9seaux sociaux'}
                 </motion.button>
               </div>
 
