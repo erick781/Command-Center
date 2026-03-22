@@ -213,6 +213,7 @@ export default function WorkspacePage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [notes, setNotes] = useState('');
+  const [googleAds, setGoogleAds] = useState<any>(null);
   const [savingNotes, setSavingNotes] = useState(false);
 
   // ── Load client ──
@@ -226,6 +227,11 @@ export default function WorkspacePage() {
         if (!found) throw new Error('Client introuvable');
         setClient(found);
         setNotes(found.meta_data?.notes || '');
+        // Fetch Google Ads data
+        fetch('/api/google-ads/by-client/' + clientId + '?days=30', { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d.has_google_ads) setGoogleAds(d); })
+          .catch(() => {});
       })
       .catch(e => setClientError(e.message))
       .finally(() => setLoadingClient(false));
@@ -385,6 +391,14 @@ export default function WorkspacePage() {
                 <KpiCard label="Score santé" value={client.health_score != null ? `${client.health_score}/100` : '—'} />
                 <KpiCard label="Statut" value={client.status || '—'} />
                 <KpiCard label="Industrie" value={client.industry || '—'} />
+                {googleAds && (
+                  <>
+                    <KpiCard label="Google Ads Spend" value={'$' + (googleAds.kpis?.spend || 0).toLocaleString()} />
+                    <KpiCard label="Google Ads Conv." value={String((googleAds.kpis?.conversions || 0).toFixed(1))} />
+                    <KpiCard label="Google Ads CPA" value={'$' + (googleAds.kpis?.cpa || 0).toFixed(2)} />
+                    <KpiCard label="Google Ads ROAS" value={(googleAds.kpis?.roas || 0).toFixed(2) + 'x'} />
+                  </>
+                )}
               </BentoGrid>
 
               {/* Quick Actions — 2-col grid */}
