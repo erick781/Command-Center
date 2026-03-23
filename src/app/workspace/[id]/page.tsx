@@ -1,6 +1,18 @@
-'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+
+    // Fetch health score
+    setLoadingHealth(true);
+    fetch(`/api/health/${found.name}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (data.health_score) {
+          setHealthScore(data.health_score);
+        }
+      })
+      .catch(() => setHealthScore(null))
+      .finally(() => setLoadingHealth(false));'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mdToHtml, buildPrintableHtml } from '@/lib/render-deliverable';
@@ -98,6 +110,18 @@ async function generateContent(
     const typeMap: Record<string,string> = {
       rapport_leadgen: 'leadgen', rapport_ecommerce: 'ecommerce', rapport_coaching: 'coach',
     };
+
+interface HealthScore {
+  score: number;
+  color: string;
+  status: string;
+  breakdown: any;
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
     const res = await fetch('/api/recommendations', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -341,6 +365,13 @@ export default function WorkspacePage() {
     { key: 'context' as const, label: 'Contexte' },
   ];
 
+  const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
+  const [loadingHealth, setLoadingHealth] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className="min-h-screen bg-[#0f0f12] text-white" style={{ fontFamily: 'Arial, sans-serif' }}>
 
@@ -354,12 +385,21 @@ export default function WorkspacePage() {
               <p className="text-sm text-gray-600 mt-0.5">{client.industry || '—'}</p>
             </div>
             <div className="flex items-center gap-2 pb-1">
-              {client.health_score != null && (
+              {healthScore && (
                 <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                  client.health_score >= 75 ? 'bg-emerald-500/10 text-emerald-400' :
-                  client.health_score >= 50 ? 'bg-amber-500/10 text-amber-400' :
+                  healthScore.color === 'green' ? 'bg-emerald-500/10 text-emerald-400' :
+                  healthScore.color === 'yellow' ? 'bg-amber-500/10 text-amber-400' :
+                  healthScore.color === 'orange' ? 'bg-[#E8912D]/10 text-[#E8912D]' :
                   'bg-red-500/10 text-red-400'
-                }`}>{client.health_score}/100</span>
+                }`}>
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${
+                    healthScore.color === 'green' ? 'bg-emerald-400' :
+                    healthScore.color === 'yellow' ? 'bg-amber-400' :
+                    healthScore.color === 'orange' ? 'bg-[#E8912D]' :
+                    'bg-red-400'
+                  }`} />
+                  {healthScore.score}/100
+                </span>
               )}
               {client.status && (
                 <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#E8912D]/10 text-[#E8912D]">{client.status}</span>
@@ -443,6 +483,65 @@ export default function WorkspacePage() {
                   </motion.div>
                 )}
               </div>
+
+              {/* Data Chat */}
+              <div className="rounded-2xl bg-[#1a1a1f] p-6 border border-white/[0.04]">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-4">
+                  <span className="text-[#E8912D]">*</span> Parle à tes données
+                </p>
+                <div className="space-y-4 bg-white/[0.02] rounded-xl p-4 min-h-[200px] max-h-[300px] overflow-y-auto">
+                  {chatMessages.length === 0 && (
+                    <p className="text-xs text-gray-700 text-center py-8">Pose une question sur les données du client...</p>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs rounded-lg px-3 py-2 text-xs ${
+                        msg.role === 'user'
+                          ? 'bg-[#E8912D]/20 text-[#E8912D] border border-[#E8912D]/30'
+                          : 'bg-white/[0.05] text-gray-300 border border-white/[0.1]'
+                      }`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/[0.05] text-gray-400 rounded-lg px-3 py-2 text-xs">
+                        <div className="flex gap-1">
+                          <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendChatMessage()}
+                    disabled={chatLoading}
+                    placeholder="Quelle est la performance sur Google Ads?"
+                    className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2
+                      text-xs text-white placeholder-gray-700 focus:border-[#E8912D]/50 focus:outline-none
+                      transition-colors disabled:opacity-50"
+                  />
+                  <motion.button
+                    onClick={sendChatMessage}
+                    disabled={chatLoading || !chatInput.trim()}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 py-2 rounded-xl bg-[#E8912D] text-white text-xs font-medium
+                      hover:bg-[#d07a1a] disabled:opacity-40 transition-colors"
+                  >
+                    {chatLoading ? '…' : '→'}
+                  </motion.button>
+                </div>
+              </div>
+
             </motion.div>
           )}
 
@@ -676,3 +775,46 @@ export default function WorkspacePage() {
     </div>
   );
 }
+  // ── Chat handler ──
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !clientId) return;
+    
+    const userMsg: ChatMessage = { role: 'user', content: chatInput };
+    setChatMessages(prev => [...prev, userMsg]);
+    const msgToSend = chatInput;
+    setChatInput('');
+    setChatLoading(true);
+    
+    try {
+      const response = await fetch(`/api/chat/client/${clientId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msgToSend }),
+      });
+      
+      if (!response.body) throw new Error('No response body');
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMsg = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        assistantMsg += decoder.decode(value, { stream: true });
+      }
+      
+      if (assistantMsg) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: assistantMsg }]);
+      }
+    } catch (e) {
+      setChatMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Erreur: ${e instanceof Error ? e.message : 'Erreur de communication'}` 
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  
