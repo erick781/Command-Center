@@ -430,15 +430,36 @@ export default function RapportsPage() {
   }
 
   /* ── Download as DOCX ── */
-  function downloadDocx() {
-    if (!selectedClient) return;
-    window.open(`/api/strategy/export-docx/${encodeURIComponent(selectedClient.name)}`, "_blank");
+  async function downloadDocx() {
+    if (!selectedClient || !reportContent) return;
+    try {
+      const res = await fetch("/api/deliverable/export-docx", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: reportType || "rapport",
+          client_name: selectedClient.name,
+          industry: selectedClient.industry || "",
+          content: reportContent,
+        }),
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rapport_" + (reportType || "rapport") + "_" + selectedClient.name.replace(/ /g, "_") + ".docx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("DOCX download error:", e);
+    }
   }
-
   /* ── Download as PDF ── */
-  function downloadPdf() {
-    if (!selectedClient) return;
-    window.open(`/api/strategy/export-pdf/${encodeURIComponent(selectedClient.name)}`, "_blank");
+  async function downloadPdf() {
+    // Pour l'instant, generer un DOCX (Erick prefere DOCX)
+    await downloadDocx();
   }
 
   /* ══════════════════════════ RENDER ══════════════════════════ */
@@ -686,6 +707,7 @@ export default function RapportsPage() {
               <div style={{ background: C.card, borderRadius: 20, padding: "8px 24px", marginBottom: 24, border: `1px solid ${C.border}` }}>
                 <SummaryRow label="Client" value={selectedClient?.name ?? ""} onEdit={() => goTo(0)} />
                 <SummaryRow label="Type" value={reportTypeLabel} onEdit={() => goTo(1)} />
+                <SummaryRow label="Campagnes" value={selectedCampaigns.length > 0 ? selectedCampaigns.length + " selectionnees" : "Toutes"} onEdit={() => goTo(1)} />
                 <SummaryRow label="Période" value={periodLabel} onEdit={() => goTo(2)} />
               </div>
 
