@@ -94,6 +94,7 @@ const PERIODS = [
   { value: "30", label: "30 jours" },
   { value: "60", label: "60 jours" },
   { value: "90", label: "90 jours" },
+  { value: "custom", label: "Personnalis\u00e9" },
 ] as const;
 
 /* ── Framer variants (same as strategie) ── */
@@ -255,6 +256,9 @@ export default function RapportsPage() {
   const [step, setStep] = useState(0);
   const [reportType, setReportType] = useState<ReportTypeKey | null>(null);
   const [period, setPeriod] = useState("");
+  const [customDateStart, setCustomDateStart] = useState("");
+  const [customDateEnd, setCustomDateEnd] = useState("");
+  const [showCustomDates, setShowCustomDates] = useState(false);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [metaCampaigns, setMetaCampaigns] = useState<Campaign[]>([]);
   const [googleCampaigns, setGoogleCampaigns] = useState<any[]>([]);
@@ -339,7 +343,7 @@ export default function RapportsPage() {
 
   /* ── Report type label helper ── */
   const reportTypeLabel = REPORT_TYPES.find((t) => t.key === reportType)?.title ?? "";
-  const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? "";
+  const periodLabel = period === "custom" && customDateStart && customDateEnd ? customDateStart + " \u2192 " + customDateEnd : PERIODS.find((p) => p.value === period)?.label ?? "";
 
   /* ── Build context for API ── */
   function buildContext() {
