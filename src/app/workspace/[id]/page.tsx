@@ -216,6 +216,7 @@ export default function WorkspacePage() {
   const [socialUrls, setSocialUrls] = useState<{facebook_url?: string; instagram_url?: string; tiktok_url?: string; youtube_url?: string; linkedin_url?: string}>({});
   const [savingSocials, setSavingSocials] = useState(false);
   const [googleAds, setGoogleAds] = useState<any>(null);
+  const [clientAlerts, setClientAlerts] = useState<any[]>([]);
   const [savingNotes, setSavingNotes] = useState(false);
 
   // ── Load client ──
@@ -236,6 +237,11 @@ export default function WorkspacePage() {
           youtube_url: found.youtube_url || '',
           linkedin_url: found.linkedin_url || '',
         });
+        // Fetch client alerts
+        fetch('/api/health/alerts/' + encodeURIComponent(found.name), { credentials: 'include' })
+          .then(r => r.json())
+          .then(d => { if (d.alerts) setClientAlerts(d.alerts); })
+          .catch(() => {});
         // Fetch Google Ads data
         fetch('/api/google-ads/by-client/' + clientId + '?days=30', { credentials: 'include' })
           .then(r => r.json())
@@ -394,6 +400,26 @@ export default function WorkspacePage() {
           {tab === 'overview' && (
             <motion.div key="overview" {...fadeIn} transition={{ duration: 0.25 }} className="space-y-8">
 
+
+              {/* Client Alerts */}
+              {clientAlerts.length > 0 && (
+                <div className="space-y-2 mb-6">
+                  {clientAlerts.slice(0, 4).map((alert: any, i: number) => (
+                    <div key={i} className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm ${
+                      alert.severity === 'high' ? '!' :
+                      alert.severity === 'medium' ? 'bg-[#E8912D]/8 border border-[#E8912D]/15 text-[#f6c978]' :
+                      'bg-blue-500/8 border border-blue-500/15 text-blue-300'
+                    }`}>
+                      <span className="text-xs">{
+                        alert.severity === 'high' ? '!' :
+                        alert.severity === 'medium' ? '*' : 'i'
+                      }</span>
+                      <span className="flex-1">{alert.message}</span>
+                      <span className="text-xs font-semibold opacity-60">{alert.action_label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {/* Bento KPI Grid */}
               <BentoGrid className="grid-cols-2 lg:grid-cols-4 auto-rows-auto gap-4">
                 <KpiCard label="Retainer mensuel" value={client.retainer_monthly ? `${client.retainer_monthly.toLocaleString()} $` : '—'} accent />
