@@ -426,6 +426,7 @@ export default function HubPage() {
     total_clients: number; active_clients: number;
     deliverables_month: number; strategies_month: number;
     agents_live: number; ad_accounts: number;
+    sparkline_deliverables?: Array<{month: string; value: number}>;
   } | null>(null);
 
   const [refreshBusy, setRefreshBusy] = useState(false);
@@ -906,21 +907,36 @@ export default function HubPage() {
         </section>
 
 
-        {/* ── KPI Metrics Strip ── */}
+        {/* ── KPI Metrics Strip (Tremor Enhanced) ── */}
         <section className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { label: "Clients actifs", value: kpiData?.active_clients ?? activeAccounts },
-            { label: "Comptes pub", value: kpiData?.ad_accounts ?? adAccounts },
-            { label: "Livrables ce mois", value: kpiData?.deliverables_month ?? 0 },
-            { label: "Agents Live", value: kpiData?.agents_live ?? liveAgents },
+            { label: "Clients actifs", value: kpiData?.active_clients ?? activeAccounts, icon: "👥", max: 100 },
+            { label: "Comptes pub", value: kpiData?.ad_accounts ?? adAccounts, icon: "📢", max: 200 },
+            { label: "Livrables ce mois", value: kpiData?.deliverables_month ?? 0, icon: "📄", max: 50, showSparkline: true },
+            { label: "Agents Live", value: kpiData?.agents_live ?? liveAgents, icon: "🤖", max: 10 },
           ].map((kpi) => (
-            <div key={kpi.label} className="group rounded-[20px] border border-white/[0.04] bg-[#17171b]/90 p-4 transition-all duration-300 hover:border-[#E8912D]/20 hover:bg-[#E8912D]/[0.04]">
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-white/35">{kpi.label}</div>
+            <div key={kpi.label} className="group relative overflow-hidden rounded-[20px] border border-white/[0.04] bg-[#17171b]/90 p-4 transition-all duration-300 hover:border-[#E8912D]/20 hover:bg-[#E8912D]/[0.04]">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium uppercase tracking-[0.12em] text-white/35">{kpi.label}</div>
+                <span className="text-sm opacity-60">{kpi.icon}</span>
+              </div>
               <div className="mt-2 flex items-end gap-2">
                 <span className="text-2xl font-black tracking-[-0.02em] text-white">{kpi.value}</span>
+                {kpi.showSparkline && kpiData?.sparkline_deliverables && (
+                  <div className="mb-1 flex items-end gap-[2px]">
+                    {(kpiData.sparkline_deliverables as Array<{month: string; value: number}>).map((d: {month: string; value: number}, i: number) => (
+                      <div
+                        key={i}
+                        className="w-[6px] rounded-sm bg-[#E8912D]/60 transition-all duration-500"
+                        style={{ height: `${Math.max(4, (d.value / Math.max(...(kpiData.sparkline_deliverables as Array<{value: number}>).map((s: {value: number}) => s.value), 1)) * 20)}px` }}
+                        title={`${d.month}: ${d.value}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.04]">
-                <div className="h-full rounded-full bg-[#E8912D]/40 transition-all duration-700" style={{ width: `${Math.min((kpi.value / (kpi.label.includes("pub") ? 200 : kpi.label.includes("Clients") ? 100 : kpi.label.includes("Agents") ? 10 : 50)) * 100, 100)}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#E8912D]/60 to-[#E8912D] transition-all duration-700 group-hover:from-[#E8912D]/80 group-hover:to-[#f6c978]" style={{ width: `${Math.min((kpi.value / kpi.max) * 100, 100)}%` }} />
               </div>
             </div>
           ))}
