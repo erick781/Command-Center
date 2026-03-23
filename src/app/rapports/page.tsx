@@ -541,7 +541,8 @@ export default function RapportsPage() {
                   {metaCampaigns.length > 0 && (
                     <>
                       <p style={{ color: C.orange, fontSize: 13, fontWeight: 600, fontFamily: font, margin: "8px 0 4px" }}>{"Meta Ads"}</p>
-                      {metaCampaigns.filter((c: Campaign) => c.spend > 0).map((camp: Campaign) => {
+                      <p style={{ color: "rgba(16,185,129,0.8)", fontSize: 11, fontWeight: 600, fontFamily: font, margin: "4px 0 2px", letterSpacing: "0.05em" }}>{"ACTIVES"}</p>
+                      {metaCampaigns.filter((c: Campaign) => c.effective_status === "ACTIVE" || c.spend > 0).map((camp: Campaign) => {
                         const sel = selectedCampaigns.includes("meta_" + camp.id);
                         return (
                           <button key={"meta_" + camp.id} onClick={() => {
@@ -562,11 +563,33 @@ export default function RapportsPage() {
                           </button>
                         );
                       })}
+                      {metaCampaigns.filter((c: Campaign) => c.effective_status !== "ACTIVE" && c.spend === 0).length > 0 && (
+                        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 600, fontFamily: font, margin: "12px 0 2px", letterSpacing: "0.05em" }}>{"PAUSES / INACTIVES"}</p>
+                      )}
+                      {metaCampaigns.filter((c: Campaign) => c.effective_status !== "ACTIVE" && c.spend === 0).map((camp: Campaign) => {
+                        const sel = selectedCampaigns.includes("meta_" + camp.id);
+                        return (
+                          <button key={"meta_paused_" + camp.id} onClick={() => {
+                            const key = "meta_" + camp.id;
+                            setSelectedCampaigns(prev => sel ? prev.filter(c => c !== key) : [...prev, key]);
+                          }} style={{
+                            background: sel ? "rgba(232,145,45,0.08)" : "rgba(255,255,255,0.02)",
+                            border: sel ? "1px solid rgba(232,145,45,0.2)" : "1px solid rgba(255,255,255,0.04)",
+                            borderRadius: 12, padding: "10px 14px", cursor: "pointer", textAlign: "left", fontFamily: font, transition: "all .2s", opacity: 0.5,
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600 }}>{camp.name}</span>
+                              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{"Pause"}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </>
                   )}
                   {googleCampaigns.length > 0 && (
                     <>
                       <p style={{ color: "#4285F4", fontSize: 13, fontWeight: 600, fontFamily: font, margin: "8px 0 4px" }}>{"Google Ads"}</p>
+                      <p style={{ color: "rgba(16,185,129,0.8)", fontSize: 11, fontWeight: 600, fontFamily: font, margin: "4px 0 2px", letterSpacing: "0.05em" }}>{"ACTIVES"}</p>
                       {googleCampaigns.filter((c: any) => c.spend > 0).map((camp: any) => {
                         const sel = selectedCampaigns.includes("google_" + camp.id);
                         return (
