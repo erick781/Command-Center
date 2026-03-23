@@ -421,6 +421,12 @@ export default function HubPage() {
 
   const [activeAccounts, setActiveAccounts] = useState(43);
   const [adAccounts, setAdAccounts] = useState(138);
+  const [kpiData, setKpiData] = useState<{
+    total_clients: number; active_clients: number;
+    deliverables_month: number; strategies_month: number;
+    agents_live: number; ad_accounts: number;
+  } | null>(null);
+
   const [refreshBusy, setRefreshBusy] = useState(false);
   const [refreshState, setRefreshState] = useState<RefreshState>({
     status: "idle",
@@ -479,6 +485,7 @@ export default function HubPage() {
     void loadCurrentUser();
     void loadHubClients();
     void loadRecentDeliverables();
+    void loadKpiData();
   }, []);
 
   async function loadHubClients() {
@@ -514,6 +521,19 @@ export default function HubPage() {
       // silent
     }
   }
+
+  async function loadKpiData() {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+    try {
+      const res = await fetch(`${apiBase}/api/dashboard/kpis`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setKpiData(data);
+      if (data.active_clients) setActiveAccounts(data.active_clients);
+      if (data.ad_accounts) setAdAccounts(data.ad_accounts);
+    } catch { /* silent */ }
+  }
+
 
   // Re-enrich deliverables when clients load
   useEffect(() => {
@@ -882,6 +902,27 @@ export default function HubPage() {
               </div>
             </div>
 
+        </section>
+
+
+        {/* ── KPI Metrics Strip ── */}
+        <section className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[
+            { label: "Clients actifs", value: kpiData?.active_clients ?? activeAccounts },
+            { label: "Comptes pub", value: kpiData?.ad_accounts ?? adAccounts },
+            { label: "Livrables ce mois", value: kpiData?.deliverables_month ?? 0 },
+            { label: "Agents Live", value: kpiData?.agents_live ?? liveAgents },
+          ].map((kpi) => (
+            <div key={kpi.label} className="group rounded-[20px] border border-white/[0.04] bg-[#17171b]/90 p-4 transition-all duration-300 hover:border-[#E8912D]/20 hover:bg-[#E8912D]/[0.04]">
+              <div className="text-xs font-medium uppercase tracking-[0.12em] text-white/35">{kpi.label}</div>
+              <div className="mt-2 flex items-end gap-2">
+                <span className="text-2xl font-black tracking-[-0.02em] text-white">{kpi.value}</span>
+              </div>
+              <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.04]">
+                <div className="h-full rounded-full bg-[#E8912D]/40 transition-all duration-700" style={{ width: `${Math.min((kpi.value / (kpi.label.includes("pub") ? 200 : kpi.label.includes("Clients") ? 100 : kpi.label.includes("Agents") ? 10 : 50)) * 100, 100)}%` }} />
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* ── Client Quick-Selector ── */}
