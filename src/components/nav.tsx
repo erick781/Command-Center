@@ -8,9 +8,9 @@ import { useEffect, useState } from "react";
 
 const links = [
   { href: "/hub", label: "Hub" },
-  
+  { href: "/rapports", label: "Rapports" },
   { href: "/clients", label: "Clients" },
-  
+  { href: "/strategie", label: "Strategie" },
 ];
 
 export function Nav() {
