@@ -26,12 +26,14 @@ const C = {
 const font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 /* ── Step definitions ── */
-type StepId = "client" | "objectif" | "detail" | "contexte" | "summary";
-const ALL_STEPS: StepId[] = ["client", "objectif", "detail", "contexte", "summary"];
+type StepId = "client" | "objectif" | "detail" | "offre" | "audience" | "contexte" | "summary";
+const ALL_STEPS: StepId[] = ["client", "objectif", "detail", "offre", "audience", "contexte", "summary"];
 const STEP_LABELS: Record<StepId, string> = {
   client: "Client",
   objectif: "Objectif",
   detail: "Détails",
+  offre: "Offre",
+  audience: "Audience",
   contexte: "Contexte",
   summary: "Résumé",
 };
@@ -281,6 +283,8 @@ export default function StrategiePage() {
   const [budget, setBudget] = useState("");
   const [probleme, setProbleme] = useState("");
   const [contexte, setContexte] = useState("");
+  const [offre, setOffre] = useState("");
+  const [audience, setAudience] = useState("");
 
   /* ── Generation ── */
   const [generating, setGenerating] = useState(false);
@@ -391,6 +395,8 @@ export default function StrategiePage() {
             `Objectif: ${objectif}`,
             horizon ? `Horizon: ${horizon}` : "",
             budget ? `Budget: ${budget}` : "",
+            offre ? `Offre/Produit: ${offre}` : "",
+            audience ? `Audience cible: ${audience}` : "",
             probleme ? `Problème: ${probleme}` : "",
             contexte || "",
           ].filter(Boolean).join("\n"),
@@ -575,6 +581,71 @@ export default function StrategiePage() {
               )}
               <div style={{ marginTop: 24 }}>
                 <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>← Retour</button>
+              </div>
+            </motion.div>
+          )}
+
+
+          {/* ── STEP: OFFRE ── */}
+          {currentStepId === "offre" && !phaseOutput && (
+            <motion.div key="offre" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Quelle est l'offre du client?" highlight="offre" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 16, fontFamily: font }}>
+                {"Le produit/service principal et ce qui le rend unique."}
+              </p>
+              <CleanTextarea
+                value={offre}
+                onChange={setOffre}
+                placeholder={"Ex: Programme coaching 12 semaines \u00e0 2,997$, garantie r\u00e9sultats. Ou: Boutique bijoux handmade, panier moyen 85$, livraison gratuite 100$+"}
+              />
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>{"\u2190 Retour"}</button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={next} style={{
+                    padding: "10px 20px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                    fontSize: 13, fontWeight: 600, color: C.textMuted,
+                    background: "rgba(255,255,255,0.04)", border: "1px solid " + C.border,
+                  }}>{"Passer \u2192"}</button>
+                  {offre.trim() && (
+                    <button onClick={next} style={{
+                      padding: "10px 24px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                      fontSize: 14, fontWeight: 700, color: "#fff",
+                      background: "linear-gradient(135deg, " + C.orange + ", #d4800f)", border: "none",
+                    }}>{"Suivant \u2192"}</button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP: AUDIENCE ── */}
+          {currentStepId === "audience" && !phaseOutput && (
+            <motion.div key="audience" variants={pageVariants} initial="enter" animate="center" exit="exit" transition={pageTrans}>
+              <QuestionTitle text="Qui est le client id\u00e9al?" highlight="client id\u00e9al" />
+              <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 16, fontFamily: font }}>
+                {"D\u00e9cris l'audience cible: qui sont-ils, quel probl\u00e8me ont-ils, o\u00f9 sont-ils?"}
+              </p>
+              <CleanTextarea
+                value={audience}
+                onChange={setAudience}
+                placeholder={"Ex: Femmes 25-45 au Qu\u00e9bec, int\u00e9ress\u00e9es mode/bijoux, budget moyen, acheteuses en ligne. Ou: Propri\u00e9taires maison 35-55, r\u00e9gion Montr\u00e9al, besoin isolation/r\u00e9novation."}
+              />
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button onClick={back} style={{ fontSize: 13, color: C.textMuted, background: "none", border: "none", cursor: "pointer", fontFamily: font, fontWeight: 500 }}>{"\u2190 Retour"}</button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={next} style={{
+                    padding: "10px 20px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                    fontSize: 13, fontWeight: 600, color: C.textMuted,
+                    background: "rgba(255,255,255,0.04)", border: "1px solid " + C.border,
+                  }}>{"Passer \u2192"}</button>
+                  {audience.trim() && (
+                    <button onClick={next} style={{
+                      padding: "10px 24px", borderRadius: 12, cursor: "pointer", fontFamily: font,
+                      fontSize: 14, fontWeight: 700, color: "#fff",
+                      background: "linear-gradient(135deg, " + C.orange + ", #d4800f)", border: "none",
+                    }}>{"Suivant \u2192"}</button>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
