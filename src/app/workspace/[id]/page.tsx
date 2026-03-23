@@ -66,8 +66,10 @@ const DELIVERABLE_TYPES: DeliverableType[] = [
     fields: [{ key: 'content_context', label: 'Plateformes et objectifs', type: 'textarea' }] },
   { id: 'email_sequence', label: 'Séquence Email', desc: 'Nurture / welcome / abandon', icon: '📧',
     fields: [{ key: 'email_context', label: 'Type de séquence et objectif', type: 'textarea' }] },
-  { id: 'ad_copy', label: 'Ad Copy', desc: 'Copies publicitaires', icon: '📝',
-    fields: [{ key: 'ad_context', label: 'Plateforme et objectif', type: 'textarea' }] },
+  { id: "ad_copy", label: "Ad Copy", desc: "Copies publicitaires", icon: "T", fields: [{ key: "ad_context", label: "Plateforme et objectif", type: "textarea" }] },
+  { id: "rapport_multicanal", label: "Rapport Multi-canal", desc: "Meta + Google", icon: "M", fields: [] },
+  { id: "rapport_social", label: "Rapport Reseaux Sociaux", desc: "FB, IG, TikTok", icon: "S", fields: [] },
+  { id: "rapport_video", label: "Rapport Video", desc: "Performance video", icon: "V", fields: [] },
 ];
 
 // ─── CONTENT GENERATION ─────────────────────────────────────────────────
@@ -104,7 +106,7 @@ async function generateContent(
 
   if (type.startsWith('rapport_')) {
     const typeMap: Record<string,string> = {
-      rapport_leadgen: 'leadgen', rapport_ecommerce: 'ecommerce', rapport_coaching: 'coach',
+      rapport_leadgen: 'leadgen', rapport_ecommerce: 'ecommerce', rapport_coaching: 'coach', rapport_multicanal: 'multicanal', rapport_social: 'social', rapport_video: 'video',
     };
     const res = await fetch('/api/recommendations', {
       method: 'POST', credentials: 'include',
