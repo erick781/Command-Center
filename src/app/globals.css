@@ -186,3 +186,12 @@ body > * { position: relative; z-index: 1; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
 body { overflow-x: hidden; }
+
+/* Tremor dark theme overrides */
+.tremor-dark .tremor-BarList-bar { background-color: rgba(232, 145, 45, 0.15) !important; }
+.tremor-dark .tremor-BarList-barColor { background-color: #E8912D !important; }
+.tremor-dark .tremor-BarList-text { color: rgba(255, 255, 255, 0.75) !important; font-size: 13px !important; }
+.tremor-dark .tremor-BarList-label { color: rgba(255, 255, 255, 0.75) !important; }
+.tremor-dark .tremor-BarList-value { color: rgba(255, 255, 255, 0.55) !important; font-size: 12px !important; }
+.tremor-dark [class*="tremor-CategoryBar"] { opacity: 0.9; }
+.tremor-dark p, .tremor-dark span { color: rgba(255, 255, 255, 0.6); }
