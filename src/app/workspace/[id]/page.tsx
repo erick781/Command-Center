@@ -60,6 +60,14 @@ const DELIVERABLE_TYPES: DeliverableType[] = [
   { id: 'brief_creatif', label: 'Brief Créatif', desc: 'Créatifs & copies', icon: '🎨',
     fields: [{ key: 'brief_context', label: 'Contexte du brief', type: 'textarea' }] },
   { id: 'resume_client', label: 'Résumé Client', desc: "Vue d'ensemble", icon: '📋', fields: [] },
+  { id: 'scripts_video', label: 'Scripts Vidéo', desc: 'Idées de contenu vidéo', icon: '🎬',
+    fields: [{ key: 'video_context', label: 'Type de contenu (organique, paid, stories)', type: 'textarea' }] },
+  { id: 'idees_contenu', label: 'Idées de Contenu', desc: 'Calendrier éditorial', icon: '💡',
+    fields: [{ key: 'content_context', label: 'Plateformes et objectifs', type: 'textarea' }] },
+  { id: 'email_sequence', label: 'Séquence Email', desc: 'Nurture / welcome / abandon', icon: '📧',
+    fields: [{ key: 'email_context', label: 'Type de séquence et objectif', type: 'textarea' }] },
+  { id: 'ad_copy', label: 'Ad Copy', desc: 'Copies publicitaires', icon: '📝',
+    fields: [{ key: 'ad_context', label: 'Plateforme et objectif', type: 'textarea' }] },
 ];
 
 // ─── CONTENT GENERATION ─────────────────────────────────────────────────
