@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DashboardCharts } from "@/components/dashboard-charts";
 
 type AgentStatus = "live" | "soon" | "planned";
 
@@ -924,6 +925,9 @@ export default function HubPage() {
             </div>
           ))}
         </section>
+
+        {/* ── Graphiques Tremor ── */}
+        <DashboardCharts />
 
         {/* ── Client Quick-Selector ── */}
         <section className="mt-8 rounded-[26px] border border-white/[0.04] bg-[#17171b]/90 p-5">
