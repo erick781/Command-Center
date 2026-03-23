@@ -357,6 +357,9 @@ export default function ClientsPage() {
                 Rafraichir
               </Button>
               <Button size="sm" onClick={() => window.open("/workspace/" + selectedClient.id, "_self")} className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]">Ouvrir</Button>
+              <Button size="sm" onClick={() => window.open("/workspace/" + selectedClient.id + "?tab=deliverables0026type=strategie_360", "_self")} variant="outline" className="border-[#E8912D]/25 text-[#f6c978]">Strategie</Button>
+              <Button size="sm" onClick={() => window.open("/workspace/" + selectedClient.id + "?tab=deliverables0026type=rapport_leadgen", "_self")} variant="outline" className="border-[#E8912D]/25 text-[#f6c978]">Rapport</Button>
+              <Button size="sm" onClick={() => window.open("/workspace/" + selectedClient.id + "?tab=deliverables0026type=scripts_video", "_self")} variant="outline" className="border-[#E8912D]/25 text-[#f6c978]">Scripts</Button>
               <Button size="sm" onClick={() => void toggleVisibility()} variant="outline" disabled={savingVisibility} className="border-white/[0.06] text-white/40">
                 {savingVisibility ? (
                   <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" />
