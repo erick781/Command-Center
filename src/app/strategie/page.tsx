@@ -464,12 +464,12 @@ export default function StrategiePage() {
                 />
               </div>
 
-              {/* Client list */}
+              {/* Client list - only show when searching */}
               {contextLoading ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 20, justifyContent: "center", color: C.textMuted, fontSize: 13 }}>
                   <LoaderCircle size={16} className="animate-spin" /> Chargement du contexte...
                 </div>
-              ) : (
+              ) : search.trim() ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {filtered.map((c) => (
                     <button key={c.id} onClick={() => selectClient(c)} style={{
@@ -492,9 +492,11 @@ export default function StrategiePage() {
                     </button>
                   ))}
                   {filtered.length === 0 && search && (
-                    <p style={{ textAlign: "center", padding: 20, color: C.textDim, fontSize: 13 }}>Aucun client trouvé</p>
+                    <p style={{ textAlign: "center", padding: 20, color: C.textDim, fontSize: 13 }}>{"Aucun client trouv\u00e9"}</p>
                   )}
                 </div>
+              ) : (
+                <p style={{ textAlign: "center", padding: 24, color: C.textDim, fontSize: 13 }}>{"Recherchez un client pour commencer"}</p>
               )}
             </motion.div>
           )}
