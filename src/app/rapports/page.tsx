@@ -999,17 +999,7 @@ export default function RapportsPage() {
                     <FileDown size={18} /> Télécharger DOCX
                   </button>
 
-                  {/* Download PDF */}
-                  <button onClick={downloadPdf} style={{
-                    width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
-                    fontFamily: font, fontSize: 16, fontWeight: 800, color: "#f4b85c",
-                    border: "1px solid rgba(244,184,92,0.25)",
-                    background: "rgba(244,184,92,0.06)",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    boxSizing: "border-box" as const,
-                  }}>
-                    <FileText size={18} /> Télécharger PDF
-                  </button>
+
 
                   {/* New report button */}
                   <button

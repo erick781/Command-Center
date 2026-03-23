@@ -808,21 +808,7 @@ export default function StrategiePage() {
                     <FileDown size={18} /> Télécharger DOCX
                   </a>
 
-                  {/* ── Button 3: Download PDF (InnovaSoins + Charts) ── */}
-                  <a
-                    href={`/api/strategy/export-pdf/${encodeURIComponent(selectedClient?.name ?? "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      width: "100%", padding: "16px 24px", borderRadius: 16, cursor: "pointer",
-                      fontFamily: font, fontSize: 16, fontWeight: 800, color: "#f4b85c", border: "1px solid rgba(244,184,92,0.25)",
-                      background: "rgba(244,184,92,0.06)", textDecoration: "none",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    <FileText size={18} /> Télécharger PDF
-                  </a>
+
 
                   <button
                     onClick={() => { setPhaseOutput(null); setStep(0); setObjectif(null); setHorizon(""); setBudget(""); setProbleme(""); setContexte(""); setSelectedClient(null); setSearch(""); }}
