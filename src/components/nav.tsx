@@ -47,41 +47,7 @@ const navCopy = {
   },
 } as const;
 
-function NotifButton() {
-  const [status, setStatus] = useState("idle");
-  
-  return (
-    <button
-      onClick={async () => {
-        setStatus("loading");
-        try {
-          if ("serviceWorker" in navigator) {
-            await navigator.serviceWorker.register("/sw.js");
-          }
-          if ("Notification" in window) {
-            const perm = await Notification.requestPermission();
-            setStatus(perm === "granted" ? "done" : "denied");
-            if (perm === "granted") {
-              fetch("/api/notifications/register", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({token: "pwa-" + Date.now(), platform: "ios-pwa"})
-              }).catch(() => {});
-            }
-          } else {
-            setStatus("unsupported");
-          }
-        } catch(e) {
-          setStatus("error");
-          console.error(e);
-        }
-      }}
-      className={"rounded-full border px-3 py-1.5 text-[12px] font-medium transition " + (status === "done" ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-[#E8912D]/20 bg-[#E8912D]/10 text-[#f4c87d] hover:bg-[#E8912D]/20")}
-    >
-      {status === "loading" ? "..." : status === "done" ? "Notifs ON" : status === "denied" ? "Refusé" : status === "unsupported" ? "Non supporté" : "Notifs"}
-    </button>
-  );
-}
+
 
 export function Nav() {
   const { language } = useLanguage();
@@ -187,7 +153,7 @@ export function Nav() {
               </Link>
             ))}
           </nav>
-          <NotifButton />
+          
 
           <div className="hidden md:flex items-center gap-2">
             <LanguageToggle ariaLabel={copy.languageLabel} />
@@ -219,7 +185,7 @@ export function Nav() {
                   {activeLink ? activeLink.labels[language] : copy.workspace}
                 </span>
               </div>
-            <div className="mt-4"><NotifButton /></div>
+            <div className="mt-4"></div>
               {userEmail ? (
                 <button
                   type="button"
