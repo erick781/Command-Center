@@ -181,6 +181,7 @@ export function Nav() {
               </Link>
             ))}
           </nav>
+          <NotifButton />
 
           <div className="hidden md:flex items-center gap-2">
             <LanguageToggle ariaLabel={copy.languageLabel} />
@@ -212,6 +213,7 @@ export function Nav() {
                   {activeLink ? activeLink.labels[language] : copy.workspace}
                 </span>
               </div>
+            <div className="mt-4"><NotifButton /></div>
               {userEmail ? (
                 <button
                   type="button"
