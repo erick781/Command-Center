@@ -48,31 +48,37 @@ const navCopy = {
 } as const;
 
 function NotifButton() {
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setEnabled(Notification.permission === "granted");
-    }
-  }, []);
-  
-  if (enabled) return null;
+  const [status, setStatus] = useState("idle");
   
   return (
     <button
       onClick={async () => {
-        if ("Notification" in window && "serviceWorker" in navigator) {
-          try {
+        setStatus("loading");
+        try {
+          if ("serviceWorker" in navigator) {
             await navigator.serviceWorker.register("/sw.js");
+          }
+          if ("Notification" in window) {
             const perm = await Notification.requestPermission();
+            setStatus(perm === "granted" ? "done" : "denied");
             if (perm === "granted") {
-              setEnabled(true);
+              fetch("/api/notifications/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({token: "pwa-" + Date.now(), platform: "ios-pwa"})
+              }).catch(() => {});
             }
-          } catch(e) { console.error(e); }
+          } else {
+            setStatus("unsupported");
+          }
+        } catch(e) {
+          setStatus("error");
+          console.error(e);
         }
       }}
-      className="rounded-full border border-[#E8912D]/20 bg-[#E8912D]/10 px-3 py-1.5 text-[12px] font-medium text-[#f4c87d] transition hover:bg-[#E8912D]/20"
+      className={"rounded-full border px-3 py-1.5 text-[12px] font-medium transition " + (status === "done" ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-[#E8912D]/20 bg-[#E8912D]/10 text-[#f4c87d] hover:bg-[#E8912D]/20")}
     >
-      Activer notifs
+      {status === "loading" ? "..." : status === "done" ? "Notifs ON" : status === "denied" ? "Refusé" : status === "unsupported" ? "Non supporté" : "Notifs"}
     </button>
   );
 }
