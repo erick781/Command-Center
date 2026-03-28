@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getBackendApiBase } from "@/lib/backend-api";
 import { evaluateMissingContext } from "@/lib/strategy-missing-context";
 import { normalizeStrategyOutput } from "@/lib/strategy-normalizer";
 import { resolveStrategyOverlays } from "@/lib/strategy-overlays";
@@ -24,20 +25,6 @@ import {
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
-}
-
-function getApiBase() {
-  const explicitBase =
-    process.env.INTERNAL_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-
-  if (explicitBase?.trim()) {
-    return explicitBase.replace(/\/$/, "");
-  }
-
-  const port = process.env.PORT?.trim() || "3000";
-  return `http://127.0.0.1:${port}`;
 }
 
 export async function POST(request: Request) {
@@ -195,7 +182,7 @@ export async function POST(request: Request) {
     });
 
     const startedAt = Date.now();
-    const response = await fetch(`${getApiBase()}/api/strategy/generate`, {
+    const response = await fetch(`${getBackendApiBase()}/api/strategy/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,0 +1,18 @@
+{
+  "autoDeepReviewEnabled": true,
+  "autoShipToDevEnabled": true,
+  "costControlEnabled": true,
+  "dailyUsdCap": 20,
+  "estimatedUsdPerDeepReview": 0.03,
+  "maxAutoReviewsPerDay": 4,
+  "maxAutoReviewsPerRun": 10,
+  "minimumFitScoreForAutoShip": 60,
+  "minimumScoreForAutoReview": 55,
+  "preferredProviderOrder": [
+    "openrouter",
+    "anthropic"
+  ],
+  "reviewFreshnessDays": 15,
+  "updatedAt": "2026-03-28T02:08:00.360Z",
+  "updatedBy": "erick@growthpartner.ca"
+}

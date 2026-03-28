@@ -10,19 +10,10 @@ export async function createRouteSupabaseClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll().filter((c: { name: string; value: string }) => {
-            // Skip Supabase auth cookies with invalid (non-JSON) values
-            // to prevent "Cannot create property 'user' on string" TypeError
-            if (c.name.startsWith('sb-') && c.value) {
-              try {
-                const parsed = JSON.parse(c.value);
-                return typeof parsed === 'object' && parsed !== null;
-              } catch {
-                return false;
-              }
-            }
-            return true;
-          });
+          // Let @supabase/ssr handle raw, chunked, and base64-encoded auth cookies.
+          // Filtering these values here drops the real browser session and causes
+          // authenticated route handlers to return 401 even after a successful login.
+          return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {

@@ -39,12 +39,12 @@ type FormState = {
 };
 
 const pageOptions = [
-  { id: "command-center.html", label: "Hub", route: "/hub" },
-  { id: "portal.html", label: "Rapports", route: "/rapports" },
-  { id: "ai-master-tracker.html", label: "Tracker", route: "/tracker" },
+  { id: "command-center.html", label: "Nouveau", route: "/new" },
+  { id: "portal.html", label: "Runs", route: "/runs" },
+  { id: "ai-master-tracker.html", label: "Ops", route: "/ops" },
   { id: "client-hub.html", label: "Clients", route: "/clients" },
-  { id: "strategy-generator.html", label: "Strategie", route: "/strategie" },
-  { id: "client-reports/index.html", label: "Client Reports", route: "/client-reports" },
+  { id: "strategy-generator.html", label: "Stratégie 360", route: "/new?taskId=strategy_360" },
+  { id: "client-reports/index.html", label: "Performance Report", route: "/new?taskId=performance_report" },
   { id: "admin.html", label: "Admin", route: "/admin" },
 ] as const;
 
@@ -881,7 +881,7 @@ export default function AdminPage() {
                         ? "Acces complet a toutes les pages."
                         : createForm.role === "manager"
                           ? "Acces a toutes les pages sauf Admin."
-                          : "Acces limite au Hub, Rapports, Tracker et Client Reports."}
+                          : "Acces limite a Nouveau, Runs, Ops et Performance Report."}
                     </p>
                   </div>
                   <Button

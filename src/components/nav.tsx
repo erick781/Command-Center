@@ -2,25 +2,64 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/components/language-provider";
+import { loadCurrentUserAccess } from "@/lib/current-user-access";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/hub", label: "Hub" },
-  { href: "/rapports", label: "Rapports" },
-  { href: "/clients", label: "Clients" },
-  { href: "/strategie", label: "Strategie" },
+  { href: "/new", labels: { en: "New", fr: "Nouveau" } },
+  { adminOnly: true, href: "/clients", labels: { en: "Clients", fr: "Clients" } },
+  { href: "/runs", labels: { en: "Runs", fr: "Runs" } },
+  { href: "/ops", labels: { en: "Ops", fr: "Ops" } },
 ];
 
+const navCopy = {
+  en: {
+    admin: "Admin",
+    closeMenu: "Close menu",
+    languageLabel: "Language",
+    loading: "Loading...",
+    login: "Login",
+    logout: "Logout",
+    navigation: "Navigation",
+    openMenu: "Open menu",
+    refresh: "Refresh Data",
+    refreshing: "Refreshing...",
+    userFallback: "Guest",
+    workspace: "Workspace",
+  },
+  fr: {
+    admin: "Admin",
+    closeMenu: "Fermer le menu",
+    languageLabel: "Langue",
+    loading: "Chargement...",
+    login: "Connexion",
+    logout: "Déconnexion",
+    navigation: "Navigation",
+    openMenu: "Ouvrir le menu",
+    refresh: "Rafraîchir les données",
+    refreshing: "Rafraîchissement...",
+    userFallback: "Invité",
+    workspace: "Espace de travail",
+  },
+} as const;
+
 export function Nav() {
+  const { language } = useLanguage();
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [refreshingData, setRefreshingData] = useState(false);
+  const copy = navCopy[language];
+  const canAdmin = userRole === "admin" || userRole === "super_admin";
+  const visibleLinks = links.filter((link) => !link.adminOnly || canAdmin);
 
   const handleRefreshData = async () => {
     try {
@@ -37,11 +76,11 @@ export function Nav() {
 
     const loadUser = async () => {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
+        const access = await loadCurrentUserAccess();
 
         if (!active) return;
-        setUserEmail(data.user?.email ?? null);
+        setUserEmail(access.email);
+        setUserRole(access.role);
       } finally {
         if (active) setLoadingUser(false);
       }
@@ -85,7 +124,7 @@ export function Nav() {
     <>
       <header className="sticky top-0 z-50 border-b border-white/[0.04] bg-[#0f0f12]/95 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.32)]">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <Link href="/hub" className="group flex items-center gap-3 no-underline">
+          <Link href="/new" className="group flex items-center gap-3 no-underline">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8912D] via-[#f6bb57] to-[#ffd980] shadow-[0_14px_30px_rgba(232,145,45,0.22)] ring-1 ring-white/10 transition-transform duration-200 group-hover:-translate-y-0.5">
               <Image src="/logo.png" alt="Partenaire.io" width={28} height={28} className="h-7 w-7 object-contain" />
             </span>
@@ -98,7 +137,7 @@ export function Nav() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1 rounded-full border border-white/[0.04] bg-white/[0.02] p-1 shadow-inner shadow-black/20">
-            {links.map((l) => (
+            {visibleLinks.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
@@ -108,36 +147,39 @@ export function Nav() {
                     ? "bg-[#E8912D] text-[#17140f] shadow-[0_10px_20px_rgba(232,145,45,0.22)]"
                     : "text-white/45 hover:bg-white/[0.05] hover:text-white"
                 )}>
-                {l.label}
+                {l.labels[language]}
               </Link>
             ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            <LanguageToggle ariaLabel={copy.languageLabel} />
             <button
               type="button"
               onClick={() => void handleRefreshData()}
               disabled={refreshingData}
               className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
             >
-              {refreshingData ? "Refreshing..." : "Refresh Data"}
+              {refreshingData ? copy.refreshing : copy.refresh}
             </button>
-            <Link
-              href="/admin"
-              className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white no-underline"
-            >
-              Admin
-            </Link>
+            {canAdmin ? (
+              <Link
+                href="/admin"
+                className="rounded-full border border-white/[0.04] bg-white/[0.02] px-4 py-2 text-[13px] font-medium text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white no-underline"
+              >
+                {copy.admin}
+              </Link>
+            ) : null}
             <div className="flex items-center gap-2 rounded-full border border-white/[0.04] bg-white/[0.02] px-2 py-1.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#E8912D] to-[#ffd96b] text-[11px] font-bold tracking-wide text-[#17140f] shadow-[0_10px_20px_rgba(232,145,45,0.2)]">
                 {initials}
               </div>
               <div className="hidden lg:flex min-w-0 flex-col pr-1">
                 <span className="max-w-[180px] truncate text-[12px] font-medium text-white/85">
-                  {loadingUser ? "Chargement..." : userEmail ?? "Invité"}
+                  {loadingUser ? copy.loading : userEmail ?? copy.userFallback}
                 </span>
                 <span className="text-[10px] uppercase tracking-[0.28em] text-white/32">
-                  {activeLink ? activeLink.label : "Workspace"}
+                  {activeLink ? activeLink.labels[language] : copy.workspace}
                 </span>
               </div>
               {userEmail ? (
@@ -147,14 +189,14 @@ export function Nav() {
                   disabled={signingOut}
                   className="rounded-full px-3 py-1.5 text-[12px] font-medium text-white/60 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-60"
                 >
-                  {signingOut ? "..." : "Logout"}
+                  {signingOut ? "..." : copy.logout}
                 </button>
               ) : (
                 <Link
                   href="/login"
                   className="rounded-full px-3 py-1.5 text-[12px] font-medium text-white/60 transition hover:bg-white/[0.06] hover:text-white no-underline"
                 >
-                  Login
+                  {copy.login}
                 </Link>
               )}
             </div>
@@ -163,7 +205,7 @@ export function Nav() {
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-label={open ? copy.closeMenu : copy.openMenu}
             className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.04] bg-white/[0.02] text-[18px] text-white/70 transition hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-white"
           >
             {open ? "✕" : "☰"}
@@ -178,7 +220,7 @@ export function Nav() {
           />
           <div className="fixed right-0 top-0 z-50 flex h-full w-[88vw] max-w-sm flex-col border-l border-white/[0.04] bg-[#0f0f12] p-5 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)] md:hidden">
             <div className="flex items-center justify-between border-b border-white/[0.04] pb-4">
-              <Link href="/hub" onClick={() => setOpen(false)} className="flex items-center gap-3 no-underline">
+              <Link href="/new" onClick={() => setOpen(false)} className="flex items-center gap-3 no-underline">
                 <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8912D] to-[#ffd96b] text-[11px] font-black text-[#17140f]">
                   <Image src="/logo.png" alt="Partenaire.io" width={24} height={24} className="h-6 w-6 object-contain" />
                 </span>
@@ -202,15 +244,16 @@ export function Nav() {
                   {initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
-                    {loadingUser ? "Chargement..." : userEmail ?? "Invité"}
+                    <p className="truncate text-sm font-medium text-white">
+                    {loadingUser ? copy.loading : userEmail ?? copy.userFallback}
                   </p>
                   <p className="text-[11px] uppercase tracking-[0.28em] text-white/32">
-                    {activeLink ? activeLink.label : "Workspace"}
+                    {activeLink ? activeLink.labels[language] : copy.workspace}
                   </p>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                <LanguageToggle ariaLabel={copy.languageLabel} />
                 <button
                   type="button"
                   onClick={() => {
@@ -220,15 +263,17 @@ export function Nav() {
                   disabled={refreshingData}
                   className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                 >
-                  {refreshingData ? "..." : "Refresh Data"}
+                  {refreshingData ? "..." : copy.refresh}
                 </button>
-                <Link
-                  href="/admin"
-                  onClick={() => setOpen(false)}
-                  className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white no-underline"
-                >
-                  Admin
-                </Link>
+                {canAdmin ? (
+                  <Link
+                    href="/admin"
+                    onClick={() => setOpen(false)}
+                    className="rounded-full border border-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white no-underline"
+                  >
+                    {copy.admin}
+                  </Link>
+                ) : null}
                 {userEmail ? (
                   <button
                     type="button"
@@ -238,7 +283,7 @@ export function Nav() {
                     }}
                     className="rounded-full border border-[#E8912D]/35 bg-[#E8912D]/10 px-3 py-1.5 text-[12px] font-medium text-[#f4c87d] transition hover:bg-[#E8912D]/15"
                   >
-                    Logout
+                    {copy.logout}
                   </button>
                 ) : (
                   <Link
@@ -246,7 +291,7 @@ export function Nav() {
                     onClick={() => setOpen(false)}
                     className="rounded-full border border-[#E8912D]/35 bg-[#E8912D]/10 px-3 py-1.5 text-[12px] font-medium text-[#f4c87d] transition hover:bg-[#E8912D]/15 no-underline"
                   >
-                    Login
+                    {copy.login}
                   </Link>
                 )}
               </div>
@@ -254,9 +299,9 @@ export function Nav() {
 
             <div className="mt-4 flex-1 overflow-y-auto pr-1">
               <p className="px-1 pb-2 text-[11px] uppercase tracking-[0.3em] text-white/30">
-                Navigation
+                {copy.navigation}
               </p>
-              {links.map((l) => (
+              {visibleLinks.map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
@@ -267,7 +312,7 @@ export function Nav() {
                       ? "bg-[#E8912D]/12 text-[#f4c87d] ring-1 ring-[#E8912D]/20"
                       : "text-white/55 hover:bg-white/[0.04] hover:text-white"
                   )}>
-                  {l.label}
+                  {l.labels[language]}
                 </Link>
               ))}
             </div>

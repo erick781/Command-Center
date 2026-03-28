@@ -1,0 +1,122 @@
+[
+  {
+    "context": "Repo description: Open-source, AI-native, low-code platform for API orchestration, workflow automation, and AI agent integration across internal systems and SaaS products.\n\nWhy it matched: Mentions automation, workflow, n8n. Recently pushed 0 days ago. Already has 741 stars, so it likely has real adoption.\n\nRecommendation: backlog\n\nReviewed with: perplexity/sonar\n\nAuto-shipped by Repo Radar because it cleared the apply-candidate threshold.",
+    "createdAt": "2026-03-27T13:15:50.041Z",
+    "createdBy": "repo-radar@n8n",
+    "fitScore": 82,
+    "id": "e863fe7e-140d-4d55-800f-b0ef51fa2176",
+    "implementationIdeas": [
+      "Map client intake → task routing → AI processing → output export workflows using built-in triggers and 200+ connectors for seamless SaaS integrations.",
+      "Embed workflow builder in Command Center UI for user-defined automations, leveraging AI components for question/context memory and Git version control for deliverables."
+    ],
+    "modelId": "perplexity/sonar",
+    "originReviewId": "a424f981-b17b-4aed-8231-ea52a27d4979",
+    "priority": "high",
+    "recommendation": "backlog",
+    "repoFullName": "bytechefhq/bytechef",
+    "repoUrl": "https://github.com/bytechefhq/bytechef",
+    "requestedOutcome": "Adapt bytechefhq/bytechef into scoped implementation work for the Command Center without waiting for manual Repo Radar approval.",
+    "risks": [
+      "562 open issues indicate potential stability gaps; heavy Java/Spring stack may conflict with lighter Node/Go preferences.",
+      "Complex multi-repo setup (UI/backend/infra) risks deployment overhead despite Docker Compose; NOASSERTION license needs legal review."
+    ],
+    "source": "repo_radar",
+    "status": "planned",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ connectors, AI components, and easy Docker setup. It excels in API orchestration and event-driven flows, forked from Piper with active development. High stars (741) but concerning 562 open issues signal maintenance challenges.",
+    "title": "Auto-adapt bytechefhq/bytechef for Command Center",
+    "updatedAt": "2026-03-27T13:15:50.041Z",
+    "updatedBy": "repo-radar@n8n",
+    "whyItMatters": "Aligns directly with Command Center needs for client/task/question/output workflows, connector orchestration, and ops automation. Java backend with React UI provides scalable self-hosted option; embedded iPaaS fits safer frontend/backend boundaries and context memory via workflows."
+  },
+  {
+    "context": "Repo description: Open-source workflow automation platform with connectors and self-hosting.\n\nWhy it matched: Strong fit for automation and orchestration improvements.\n\nRecommendation: backlog\n\nReviewed with: perplexity/sonar\n\nAuto-shipped by Repo Radar because it cleared the apply-candidate threshold.",
+    "createdAt": "2026-03-25T03:34:45.651Z",
+    "createdBy": "repo-radar@n8n",
+    "fitScore": 82,
+    "id": "2b7040d3-22a6-4a7c-a906-0950caf48510",
+    "implementationIdeas": [
+      "Adopt visual workflow editor patterns for client/task/question UI in Command Center",
+      "Integrate connector architecture and AI components for stronger context memory/exports",
+      "Borrow orchestration flows (triggers, retries, error handling) for ops automation"
+    ],
+    "modelId": "perplexity/sonar",
+    "originReviewId": "3ff4eed8-5f16-457b-8984-4c531a2d33f6",
+    "priority": "high",
+    "recommendation": "backlog",
+    "repoFullName": "bytechefhq/bytechef",
+    "repoUrl": "https://github.com/bytechefhq/bytechef",
+    "requestedOutcome": "Adapt bytechefhq/bytechef into scoped implementation work for the Command Center without waiting for manual Repo Radar approval.",
+    "risks": [
+      "Heavy Java/Gradle dependency hard to adapt into existing Command Center stack",
+      "Full platform scope (DB, auth, scaling) overkill for targeted improvements; high integration cost",
+      "120 open issues and NOASSERTION license signal potential maintenance/stability concerns"
+    ],
+    "source": "repo_radar",
+    "status": "planned",
+    "summary": "ByteChef is a mature open-source workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosting via Docker. It excels in event-driven orchestration, low-code extensibility, and scalable workflows but is a full Java platform unlikely to integrate simply into Command Center. Stars and activity indicate quality, yet adaptation requires significant engineering.",
+    "title": "Auto-adapt bytechefhq/bytechef for Command Center",
+    "updatedAt": "2026-03-25T03:34:45.651Z",
+    "updatedBy": "repo-radar@n8n",
+    "whyItMatters": "Aligns with client/task/question/output workflows via visual orchestration and flow controls (conditionals, loops, parallel). Provides scalable connectors/context memory patterns and automation UX ideas. Supports exports/APIs and safer boundaries through embedded/self-hosted design, but Java stack mismatches lighter Command Center needs."
+  },
+  {
+    "context": "Repo description: VULNRΞPO - Free vulnerability report generator and repository, end-to-end encrypted! Templates of issues, CWE,CVE,MITRE ATT&CK,PCI DSS, import Nmap/Nessus/Burp/OpenVAS/Bugcrowd/Trivy, Jira export, TXT/JSON/MARKDOWN/HTML/DOCX, attachments, automatic changelog, stats, vulnerability management, bugbounty, local ai/llm, super fast pentest reporting!\n\nWhy it matched: Mentions docx, report, template. Recently pushed 14 days ago. Already has 549 stars, so it likely has real adoption.\n\nRecommendation: backlog\n\nReviewed with: openrouter/auto",
+    "createdAt": "2026-03-25T01:58:23.275Z",
+    "createdBy": "erick@growthpartner.ca",
+    "fitScore": 72,
+    "id": "de7d2ba1-e500-4db7-b2d1-3e9847dde1bf",
+    "implementationIdeas": [
+      "Extract Angular report templating + DOCX/HTML/PDF export modules for Command Center's output workflows, adapting scanner imports to ingest AI-generated vuln data.",
+      "Integrate local LLM hooks and E2E encryption patterns to enhance context memory and secure frontend sharing of task deliverables."
+    ],
+    "modelId": "openrouter/auto",
+    "originReviewId": "7c3c91fe-1740-499a-b65f-896be83808af",
+    "priority": "medium",
+    "recommendation": "backlog",
+    "repoFullName": "kac89/vulnrepo",
+    "repoUrl": "https://github.com/kac89/vulnrepo",
+    "requestedOutcome": "Review kac89/vulnrepo and turn the highest-leverage ideas into scoped implementation work for the Command Center.",
+    "risks": [
+      "Narrow security/pentest focus requires significant retheming for general client workflows; Angular dep may conflict with Command Center stack.",
+      "Pure client-side storage lacks enterprise persistence; future backend API integration could introduce ops complexity."
+    ],
+    "source": "repo_radar",
+    "status": "planned",
+    "summary": "VULNRΞPO is a mature Angular/TypeScript frontend app for generating vulnerability reports with strong templating, scanner imports (Nmap/Nessus/Burp), DOCX/HTML exports, E2E encryption, and local LLM integration. It excels at pentest deliverables but is narrowly scoped to security reporting without task workflows or backend persistence. Recent activity (pushed 14 days ago) and 549 stars indicate real adoption.",
+    "title": "Adapt kac89/vulnrepo for Command Center",
+    "updatedAt": "2026-03-25T02:54:50.407Z",
+    "updatedBy": "erick@growthpartner.ca",
+    "whyItMatters": "Directly improves deliverable generation via proven templates/exports for client outputs; frontend-only architecture with API hooks aligns with safer boundaries and scalable connectors. Lacks native client/task/question workflows but could extend Command Center's output polish without heavy backend lift."
+  },
+  {
+    "context": "Repo description: Open-source, AI-native, low-code platform for API orchestration, workflow automation, and AI agent integration across internal systems and SaaS products.\n\nWhy it matched: Mentions automation, workflow, n8n. Recently pushed 0 days ago. Already has 740 stars, so it likely has real adoption.\n\nRecommendation: backlog\n\nReviewed with: perplexity/sonar",
+    "createdAt": "2026-03-25T01:58:16.879Z",
+    "createdBy": "erick@growthpartner.ca",
+    "fitScore": 84,
+    "id": "b33d3702-ba9c-4d7c-b159-95429575caac",
+    "implementationIdeas": [
+      "Adapt visual workflow editor for client/task/question pipelines with custom AI connectors for Command Center outputs",
+      "Extract connector patterns and event triggers to strengthen memory/context handling in ops automation flows",
+      "Embed Docker-based deployment for scalable, self-hosted workflow exports and deliverables"
+    ],
+    "modelId": "perplexity/sonar",
+    "originReviewId": "12486136-170d-47db-9303-c351b0b6a883",
+    "priority": "medium",
+    "recommendation": "backlog",
+    "repoFullName": "bytechefhq/bytechef",
+    "repoUrl": "https://github.com/bytechefhq/bytechef",
+    "requestedOutcome": "Review bytechefhq/bytechef and turn the highest-leverage ideas into scoped implementation work for the Command Center.",
+    "risks": [
+      "Repo maintenance signals weak (7 watchers, 120 open issues, NOASSERTION license conflict with README), risking instability",
+      "Heavy footprint (PostgreSQL dependency, complex monorepo) unsuitable for lightweight Command Center integration",
+      "Fork origins and rapid updates (to 2026) suggest potential breaking changes or upstream dependency risks"
+    ],
+    "source": "repo_radar",
+    "status": "planned",
+    "summary": "ByteChef is a mature open-source workflow automation platform with visual editor, 200+ connectors, AI integration, and self-hosting via Docker. It excels in event-driven flows, conditional logic, and extensibility but shows repo health concerns with low watchers and high open issues. Strong fit for Command Center's automation orchestration needs.",
+    "title": "Adapt bytechefhq/bytechef for Command Center",
+    "updatedAt": "2026-03-25T02:54:41.688Z",
+    "updatedBy": "erick@growthpartner.ca",
+    "whyItMatters": "Provides ready patterns for client/task/question/output workflows via triggers and flow controls; enhances connectors and context memory through extensible components and AI agents; improves ops flows with resilience features like retries and parallelism while maintaining safe frontend/backend separation in its TypeScript/Java stack."
+  }
+]

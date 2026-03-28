@@ -1,0 +1,1414 @@
+"use client";
+
+import Link from "next/link";
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Bot,
+  ExternalLink,
+  LoaderCircle,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Star,
+  Wallet,
+  Zap,
+} from "lucide-react";
+
+import { Nav } from "@/components/nav";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/components/language-provider";
+import { loadCurrentUserAccess } from "@/lib/current-user-access";
+import { getLanguageLocale } from "@/lib/language";
+
+type RepoRadarRun = {
+  finished: boolean;
+  id: string;
+  mode: string;
+  startedAt?: string | null;
+  status: string;
+  stoppedAt?: string | null;
+  workflowId: string;
+};
+
+type RepoRadarCandidate = {
+  category: string;
+  description: string;
+  forks: number;
+  fullName: string;
+  language: string;
+  name: string;
+  openIssues: number;
+  possibleUse: string;
+  pushedAt?: string | null;
+  score: number;
+  stars: number;
+  topics: string[];
+  url: string;
+  whyItMatches: string;
+};
+
+type RepoRadarReport = {
+  candidateCount: number;
+  candidates: RepoRadarCandidate[];
+  categories: string[];
+  generatedAt: string;
+  note: string;
+  scannedQueries: number;
+  scannedRepos: number;
+  uniqueRepos: number;
+};
+
+type RepoRadarSettings = {
+  autoDeepReviewEnabled: boolean;
+  autoShipToDevEnabled: boolean;
+  costControlEnabled: boolean;
+  dailyUsdCap: number;
+  estimatedUsdPerDeepReview: number;
+  maxAutoReviewsPerDay: number;
+  maxAutoReviewsPerRun: number;
+  minimumFitScoreForAutoShip: number;
+  minimumScoreForAutoReview: number;
+  preferredProviderOrder: ("anthropic" | "openrouter")[];
+  reviewFreshnessDays: number;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+type RepoRadarBudget = {
+  actualSpendTodayUsd: number;
+  autoReviewsToday: number;
+  costControlEnabled: boolean;
+  dailyUsdCap: number;
+  manualReviewsToday: number;
+  remainingBudgetUsd: number | null;
+  reviewSlotsRemainingToday: number | null;
+  reviewsToday: number;
+  reviewsWithoutRealCostToday: number;
+  skippedForBudgetToday: number;
+};
+
+type RepoRadarReview = {
+  actualCostUsd: number | null;
+  category: string;
+  costSource: "exact" | "legacy_estimate" | "unavailable";
+  createdAt: string;
+  error: string;
+  fitScore: number;
+  fullName: string;
+  id: string;
+  implementationIdeas: string[];
+  modelId: string;
+  possibleUse: string;
+  provider: "anthropic" | "openrouter" | "";
+  recommendation: "ignore" | "watch" | "backlog" | "apply_candidate";
+  repoPushedAt?: string | null;
+  risks: string[];
+  score: number;
+  source: "auto" | "manual";
+  status: "completed" | "failed" | "skipped_budget" | "skipped_disabled";
+  summary: string;
+  title: string;
+  topics: string[];
+  updatedAt: string;
+  usage: {
+    cachedTokens: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  whyItMatters: string;
+};
+
+type RepoRadarSnapshot = {
+  budget: RepoRadarBudget;
+  editorBaseUrl?: string;
+  error?: string;
+  fetchedAt: string;
+  found: boolean;
+  reachable: boolean;
+  recentRuns: RepoRadarRun[];
+  report?: RepoRadarReport | null;
+  reviews: RepoRadarReview[];
+  settings: RepoRadarSettings;
+  workflow?: {
+    active: boolean;
+    createdAt?: string | null;
+    id: string;
+    lastRun?: RepoRadarRun | null;
+    lastSuccessfulRun?: RepoRadarRun | null;
+    name: string;
+    nodeCount: number;
+    openUrl?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+const copy = {
+  en: {
+    accessDenied: "Visible to admins only.",
+    active: "Active automation",
+    autoReview: "Auto deep review",
+    autoShipToDev: "Auto-ship apply candidates to AI Dev",
+    autoReviews: "Auto reviews today",
+    budgetCap: "Daily cap",
+    budgetDisabled: "Cap off while we test",
+    budgetHeading: "Cost control",
+    budgetOn: "Cap active",
+    candidates: "Top candidates",
+    capToggle: "Enable cost cap",
+    emptyCandidates: "No candidate repos yet.",
+    emptyReview: "No deep review yet.",
+    emptyRuns: "No runs yet.",
+    fetchedAt: "Last sync",
+    heading: "Repo Radar",
+    ideaFit: "Why it matters",
+    ideas: "Best adaptation ideas",
+    shipError: "Unable to ship this repo into AI development.",
+    shipNow: "Ship to AI dev",
+    shipped: "Sent to AI development queue.",
+    lastGoodRun: "Last good run",
+    loadError: "Unable to load Repo Radar.",
+    loading: "Loading Repo Radar...",
+    manualReview: "Deep review",
+    models: {
+      anthropic: "Anthropic first",
+      openrouter: "OpenRouter first",
+    },
+    noWorkflow:
+      "Repo Radar is not installed in n8n yet. Run the setup script on the VPS and this page will light up automatically.",
+    note: "Real provider cost only. No fake estimates.",
+    openN8n: "Open n8n",
+    possibleUse: "Potential use",
+    providerBias: "Provider priority",
+    recentReviews: "Recent deep reviews",
+    refresh: "Refresh radar",
+    reviewBudget: "Real spend today",
+    reviewFreshness: "Fresh review window (days)",
+    reviewNow: "Review now",
+    reviewSettings: "Review settings",
+    reviewStatus: {
+      completed: "Completed",
+      failed: "Failed",
+      skipped_budget: "Skipped by cap",
+      skipped_disabled: "Skipped",
+    },
+    reviewsToday: "Deep reviews today",
+    runCap: "Max auto reviews / run",
+    runs: "Recent runs",
+    save: "Save settings",
+    saveError: "Unable to save settings.",
+    saveSuccess: "Settings saved.",
+    savedBy: "Last updated",
+    scannedQueries: "Queries scanned",
+    scannedRepos: "Repos scanned",
+    slotsLeft: "Auto review slots left",
+    unavailableCost: "No real cost",
+    stateNo: "No",
+    stateYes: "Yes",
+    subtitle: "Spot repos worth adapting.",
+    threshold: "Auto review threshold",
+    shipThreshold: "Auto-ship fit threshold",
+    titleBadge: "Repo Radar",
+    uniqueRepos: "Unique repos",
+    why: "Why it matches",
+  },
+  fr: {
+    accessDenied: "Visible pour les admins seulement.",
+    active: "Automation active",
+    autoReview: "Deep review auto",
+    autoShipToDev: "Auto-envoyer les apply candidates vers AI Dev",
+    autoReviews: "Deep reviews auto aujourd'hui",
+    budgetCap: "Cap journalier",
+    budgetDisabled: "Cap inactif pendant les tests",
+    budgetHeading: "Contrôle des coûts",
+    budgetOn: "Cap actif",
+    candidates: "Meilleurs candidats",
+    capToggle: "Activer le cap de coût",
+    emptyCandidates: "Aucun repo candidat pour l’instant.",
+    emptyReview: "Aucune deep review encore.",
+    emptyRuns: "Aucun run encore.",
+    fetchedAt: "Dernière synchro",
+    heading: "Repo Radar",
+    ideaFit: "Pourquoi ça vaut la peine",
+    ideas: "Meilleures pistes d’adaptation",
+    shipError: "Impossible d’envoyer ce repo vers la queue AI dev.",
+    shipNow: "Envoyer en AI dev",
+    shipped: "Envoyé vers la queue AI dev.",
+    lastGoodRun: "Dernier bon run",
+    loadError: "Impossible de charger Repo Radar.",
+    loading: "Chargement de Repo Radar...",
+    manualReview: "Deep review",
+    models: {
+      anthropic: "Anthropic d'abord",
+      openrouter: "OpenRouter d'abord",
+    },
+    noWorkflow:
+      "Repo Radar n’est pas encore installé dans n8n. Lance le script de setup sur le VPS et cette page se remplira automatiquement.",
+    note: "Seulement du coût réel provider. Pas d'estimation.",
+    openN8n: "Ouvrir n8n",
+    possibleUse: "Utilisation possible",
+    providerBias: "Priorité provider",
+    recentReviews: "Deep reviews récentes",
+    refresh: "Rafraîchir le radar",
+    reviewBudget: "Coût réel aujourd'hui",
+    reviewFreshness: "Fenêtre de fraîcheur (jours)",
+    reviewNow: "Lancer la review",
+    reviewSettings: "Réglages review",
+    reviewStatus: {
+      completed: "Complétée",
+      failed: "Échec",
+      skipped_budget: "Bloquée par le cap",
+      skipped_disabled: "Skippée",
+    },
+    reviewsToday: "Deep reviews aujourd'hui",
+    runCap: "Max reviews auto / run",
+    runs: "Runs récents",
+    save: "Sauvegarder",
+    saveError: "Impossible de sauvegarder les réglages.",
+    saveSuccess: "Réglages sauvegardés.",
+    savedBy: "Dernière mise à jour",
+    scannedQueries: "Requêtes scannées",
+    scannedRepos: "Repos scannés",
+    slotsLeft: "Slots auto restants",
+    unavailableCost: "Pas de coût réel",
+    stateNo: "Non",
+    stateYes: "Oui",
+    subtitle: "Repérer les repos à adapter.",
+    threshold: "Seuil de score auto",
+    shipThreshold: "Seuil de fit pour auto-envoi",
+    titleBadge: "Repo Radar",
+    uniqueRepos: "Repos uniques",
+    why: "Pourquoi ça fit",
+  },
+} as const;
+
+const shellFont = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+function formatDate(locale: string, value?: string | null) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(value).toLocaleString(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function formatCompact(locale: string, value: number) {
+  return new Intl.NumberFormat(locale, {
+    notation: value >= 1000 ? "compact" : "standard",
+    maximumFractionDigits: value >= 1000 ? 1 : value >= 10 ? 0 : 1,
+  }).format(value);
+}
+
+function formatCurrency(locale: string, value: number) {
+  return new Intl.NumberFormat(locale, {
+    currency: "USD",
+    maximumFractionDigits: value >= 1 ? 2 : 3,
+    minimumFractionDigits: value >= 1 ? 2 : 3,
+    style: "currency",
+  }).format(value);
+}
+
+function prettyCategory(language: "fr" | "en", value: string) {
+  const labels = {
+    automation: { en: "Automation", fr: "Automation" },
+    connectors: { en: "Connectors", fr: "Connecteurs" },
+    deliverables: { en: "Deliverables", fr: "Livrables" },
+    frontend: { en: "Frontend", fr: "Frontend" },
+  } as const;
+
+  return labels[value as keyof typeof labels]?.[language] ?? value;
+}
+
+function prettyRecommendation(language: "fr" | "en", value: RepoRadarReview["recommendation"]) {
+  const labels = {
+    apply_candidate: { en: "Apply candidate", fr: "Bon candidat d’application" },
+    backlog: { en: "Backlog", fr: "Backlog" },
+    ignore: { en: "Ignore", fr: "Ignorer" },
+    watch: { en: "Watch", fr: "À surveiller" },
+  } as const;
+
+  return labels[value]?.[language] ?? value;
+}
+
+function formatReviewCost(
+  language: "fr" | "en",
+  locale: string,
+  review: RepoRadarReview,
+) {
+  if (review.costSource === "exact" && review.actualCostUsd !== null) {
+    return formatCurrency(locale, review.actualCostUsd);
+  }
+
+  return copy[language].unavailableCost;
+}
+
+function mergeReviews(current: RepoRadarReview[], incoming: RepoRadarReview[]) {
+  const merged = new Map<string, RepoRadarReview>();
+
+  [...incoming, ...current].forEach((review) => {
+    merged.set(review.id, review);
+  });
+
+  return Array.from(merged.values()).sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+function reviewMap(reviews: RepoRadarReview[]) {
+  const map = new Map<string, RepoRadarReview>();
+
+  reviews.forEach((review) => {
+    const key = review.fullName.toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, review);
+    }
+  });
+
+  return map;
+}
+
+export default function RepoRadarPage() {
+  const { language } = useLanguage();
+  const locale = getLanguageLocale(language);
+  const labels = copy[language];
+  const [canAdmin, setCanAdmin] = useState(false);
+  const [loadingAccess, setLoadingAccess] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [reviewingRepo, setReviewingRepo] = useState<string | null>(null);
+  const [shippingRepo, setShippingRepo] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<RepoRadarSnapshot | null>(null);
+  const [settingsDraft, setSettingsDraft] = useState<RepoRadarSettings | null>(null);
+
+  const loadSnapshot = useCallback(
+    async (allowLoad: boolean) => {
+      if (!allowLoad) {
+        setSnapshot(null);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/ops/repo-radar", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        const data = (await response.json().catch(() => null)) as
+          | (RepoRadarSnapshot & { error?: string })
+          | null;
+
+        if (!response.ok) {
+          throw new Error(data?.error || labels.loadError);
+        }
+
+        setSnapshot(data as RepoRadarSnapshot);
+        setSettingsDraft((data as RepoRadarSnapshot).settings);
+      } catch (nextError) {
+        setSnapshot(null);
+        setError(nextError instanceof Error ? nextError.message : labels.loadError);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [labels.loadError],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadAccess = async () => {
+      try {
+        const access = await loadCurrentUserAccess();
+        if (!active) return;
+
+        setCanAdmin(access.isAdmin);
+        setLoadingAccess(false);
+        void loadSnapshot(access.isAdmin);
+      } catch {
+        if (!active) return;
+        setCanAdmin(false);
+        setLoadingAccess(false);
+      }
+    };
+
+    void loadAccess();
+
+    return () => {
+      active = false;
+    };
+  }, [loadSnapshot]);
+
+  const categories = useMemo(
+    () => (snapshot?.report?.categories ?? []).map((value) => prettyCategory(language, value)),
+    [language, snapshot?.report?.categories],
+  );
+
+  const latestReviews = useMemo(() => reviewMap(snapshot?.reviews ?? []), [snapshot?.reviews]);
+
+  const updateDraft = useCallback(
+    <K extends keyof RepoRadarSettings>(key: K, value: RepoRadarSettings[K]) => {
+      setSettingsDraft((current) => {
+        if (!current) {
+          return current;
+        }
+        return {
+          ...current,
+          [key]: value,
+        };
+      });
+    },
+    [],
+  );
+
+  const saveSettings = useCallback(async () => {
+    if (!settingsDraft) {
+      return;
+    }
+
+    setSavingSettings(true);
+    setActionMessage(null);
+
+    try {
+      const response = await fetch("/api/ops/repo-radar", {
+        body: JSON.stringify(settingsDraft),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PATCH",
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { budget?: RepoRadarBudget; error?: string; settings?: RepoRadarSettings }
+        | null;
+
+      if (!response.ok || !data?.settings || !data.budget) {
+        throw new Error(data?.error || labels.saveError);
+      }
+
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              budget: data.budget as RepoRadarBudget,
+              settings: data.settings as RepoRadarSettings,
+            }
+          : current,
+      );
+      setSettingsDraft(data.settings as RepoRadarSettings);
+      setActionMessage(labels.saveSuccess);
+    } catch (nextError) {
+      setActionMessage(nextError instanceof Error ? nextError.message : labels.saveError);
+    } finally {
+      setSavingSettings(false);
+    }
+  }, [labels.saveError, labels.saveSuccess, settingsDraft]);
+
+  const runManualReview = useCallback(
+    async (candidate: RepoRadarCandidate) => {
+      setReviewingRepo(candidate.fullName);
+      setActionMessage(null);
+
+      try {
+        const response = await fetch("/api/ops/repo-radar/review", {
+          body: JSON.stringify({ candidate, trigger: "manual" }),
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        });
+        const data = (await response.json().catch(() => null)) as
+          | {
+              budget?: RepoRadarBudget;
+              error?: string;
+              reviews?: RepoRadarReview[];
+            }
+          | null;
+
+        if (!response.ok) {
+          throw new Error(data?.error || labels.loadError);
+        }
+
+        setSnapshot((current) =>
+          current
+            ? {
+                ...current,
+                budget: data?.budget ?? current.budget,
+                reviews: mergeReviews(current.reviews, data?.reviews ?? []),
+              }
+            : current,
+        );
+      } catch (nextError) {
+        setActionMessage(nextError instanceof Error ? nextError.message : labels.loadError);
+      } finally {
+        setReviewingRepo(null);
+      }
+    },
+    [labels.loadError],
+  );
+
+  const shipReviewToDev = useCallback(
+    async (candidate: RepoRadarCandidate, review: RepoRadarReview) => {
+      setShippingRepo(review.id);
+      setActionMessage(null);
+
+      try {
+        const response = await fetch("/api/ops/dev-requests", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            context: [
+              candidate.description ? `Repo description: ${candidate.description}` : "",
+              candidate.whyItMatches ? `Why it matched: ${candidate.whyItMatches}` : "",
+              review.recommendation ? `Recommendation: ${review.recommendation}` : "",
+              review.modelId ? `Reviewed with: ${review.modelId}` : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            fitScore: review.fitScore,
+            implementationIdeas: review.implementationIdeas,
+            modelId: review.modelId,
+            originReviewId: review.id,
+            priority:
+              review.recommendation === "apply_candidate" || review.fitScore >= 85
+                ? "high"
+                : review.recommendation === "backlog"
+                  ? "medium"
+                  : "low",
+            recommendation: review.recommendation,
+            repoFullName: candidate.fullName,
+            repoUrl: candidate.url,
+            requestedOutcome: `Review ${candidate.fullName} and turn the highest-leverage ideas into scoped implementation work for the Command Center.`,
+            risks: review.risks,
+            source: "repo_radar",
+            summary: review.summary,
+            title: `Adapt ${candidate.fullName} for Command Center`,
+            whyItMatters: review.whyItMatters,
+          }),
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string; request?: { id: string } }
+          | null;
+
+        if (!response.ok) {
+          throw new Error(payload?.error || labels.shipError);
+        }
+
+        setActionMessage(labels.shipped);
+      } catch (nextError) {
+        setActionMessage(nextError instanceof Error ? nextError.message : labels.shipError);
+      } finally {
+        setShippingRepo(null);
+      }
+    },
+    [labels.shipError, labels.shipped],
+  );
+
+  const settings = settingsDraft ?? snapshot?.settings ?? null;
+  const budget = snapshot?.budget ?? null;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0f" }}>
+      <Nav />
+      <main
+        style={{
+          maxWidth: 1220,
+          margin: "0 auto",
+          padding: "40px 20px 88px",
+          color: "white",
+          fontFamily: shellFont,
+        }}
+      >
+        <div style={{ maxWidth: 860 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 14px",
+              borderRadius: 999,
+              background: "rgba(232,145,45,0.08)",
+              border: "1px solid rgba(232,145,45,0.18)",
+              color: "#f6c978",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            <Sparkles size={14} />
+            {labels.titleBadge}
+          </div>
+          <h1
+            style={{
+              marginTop: 20,
+              fontSize: 40,
+              lineHeight: 1.05,
+              letterSpacing: "-0.03em",
+              fontWeight: 800,
+            }}
+          >
+            {labels.heading}
+          </h1>
+          <p
+            style={{
+              marginTop: 12,
+              color: "rgba(255,255,255,0.55)",
+              lineHeight: 1.7,
+              fontSize: 15,
+              maxWidth: 760,
+            }}
+          >
+            {labels.subtitle}
+          </p>
+          <p
+            style={{
+              marginTop: 12,
+              color: "rgba(255,255,255,0.38)",
+              lineHeight: 1.7,
+              fontSize: 14,
+            }}
+          >
+            {labels.note}
+          </p>
+        </div>
+
+        <div
+          style={{
+            marginTop: 28,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <Button
+            type="button"
+            onClick={() => void loadSnapshot(canAdmin)}
+            disabled={loading || !canAdmin}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
+          >
+            {loading ? <LoaderCircle size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            {labels.refresh}
+          </Button>
+          {snapshot?.workflow?.openUrl ? (
+            <Link
+              href={snapshot.workflow.openUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={pillLinkStyle}
+            >
+              <ExternalLink size={15} />
+              {labels.openN8n}
+            </Link>
+          ) : null}
+          {snapshot?.fetchedAt ? (
+            <span style={{ color: "rgba(255,255,255,0.42)", fontSize: 13 }}>
+              {labels.fetchedAt}: {formatDate(locale, snapshot.fetchedAt)}
+            </span>
+          ) : null}
+        </div>
+
+        {actionMessage ? (
+          <div style={{ marginTop: 14, color: actionMessage === labels.saveSuccess ? "#9ae6b4" : "#f5b2b2" }}>
+            {actionMessage}
+          </div>
+        ) : null}
+
+        {loadingAccess ? (
+          <div style={{ marginTop: 28, color: "rgba(255,255,255,0.45)" }}>{labels.loading}</div>
+        ) : !canAdmin ? (
+          <div style={{ marginTop: 28, color: "rgba(255,255,255,0.45)" }}>{labels.accessDenied}</div>
+        ) : error ? (
+          <div style={{ marginTop: 28, color: "#f5b2b2" }}>{error}</div>
+        ) : !snapshot?.found ? (
+          <div style={panelStyle}>{labels.noWorkflow}</div>
+        ) : (
+          <>
+            <section
+              style={{
+                marginTop: 28,
+                display: "grid",
+                gap: 16,
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              }}
+            >
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.active}</div>
+                <div style={{ ...metricValueStyle, color: snapshot.workflow?.active ? "#7ef0b2" : "#f6c978" }}>
+                  {snapshot.workflow?.active ? labels.stateYes : labels.stateNo}
+                </div>
+              </div>
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.lastGoodRun}</div>
+                <div style={metricValueStyle}>{formatDate(locale, snapshot.workflow?.lastSuccessfulRun?.startedAt)}</div>
+              </div>
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.scannedRepos}</div>
+                <div style={metricValueStyle}>{formatCompact(locale, snapshot.report?.scannedRepos ?? 0)}</div>
+              </div>
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.reviewsToday}</div>
+                <div style={metricValueStyle}>{formatCompact(locale, budget?.reviewsToday ?? 0)}</div>
+              </div>
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.reviewBudget}</div>
+                <div style={metricValueStyle}>{formatCurrency(locale, budget?.actualSpendTodayUsd ?? 0)}</div>
+              </div>
+              <div style={metricCardStyle}>
+                <div style={metricLabelStyle}>{labels.budgetCap}</div>
+                <div style={metricValueStyle}>
+                  {budget?.costControlEnabled
+                    ? formatCurrency(locale, budget.dailyUsdCap)
+                    : labels.budgetDisabled}
+                </div>
+              </div>
+            </section>
+
+            <section
+              style={{
+                marginTop: 28,
+                display: "grid",
+                gap: 18,
+                gridTemplateColumns: "minmax(0, 1.4fr) minmax(320px, 0.9fr)",
+              }}
+            >
+              <div style={panelStyle}>
+                <div style={sectionEyebrowStyle}>{labels.reviewSettings}</div>
+                <div style={{ marginTop: 8, fontSize: 24, fontWeight: 800 }}>{labels.budgetHeading}</div>
+                <div style={{ marginTop: 18, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                  <ToggleRow
+                    checked={Boolean(settings?.autoDeepReviewEnabled)}
+                    label={labels.autoReview}
+                    onChange={(value) => updateDraft("autoDeepReviewEnabled", value)}
+                  />
+                  <ToggleRow
+                    checked={Boolean(settings?.autoShipToDevEnabled)}
+                    label={labels.autoShipToDev}
+                    onChange={(value) => updateDraft("autoShipToDevEnabled", value)}
+                  />
+                  <ToggleRow
+                    checked={Boolean(settings?.costControlEnabled)}
+                    label={labels.capToggle}
+                    onChange={(value) => updateDraft("costControlEnabled", value)}
+                  />
+                  <Field
+                    label={labels.budgetCap}
+                    step="0.10"
+                    type="number"
+                    value={settings?.dailyUsdCap ?? 0}
+                    onChange={(value) => updateDraft("dailyUsdCap", value)}
+                  />
+                  <Field
+                    label={labels.runCap}
+                    step="1"
+                    type="number"
+                    value={settings?.maxAutoReviewsPerRun ?? 0}
+                    onChange={(value) => updateDraft("maxAutoReviewsPerRun", value)}
+                  />
+                  <Field
+                    label={labels.slotsLeft}
+                    readOnly
+                    type="text"
+                    value={budget?.reviewSlotsRemainingToday ?? "—"}
+                    onChange={() => undefined}
+                  />
+                  <Field
+                    label={labels.threshold}
+                    step="1"
+                    type="number"
+                    value={settings?.minimumScoreForAutoReview ?? 0}
+                    onChange={(value) => updateDraft("minimumScoreForAutoReview", value)}
+                  />
+                  <Field
+                    label={labels.shipThreshold}
+                    step="1"
+                    type="number"
+                    value={settings?.minimumFitScoreForAutoShip ?? 0}
+                    onChange={(value) => updateDraft("minimumFitScoreForAutoShip", value)}
+                  />
+                  <Field
+                    label={labels.reviewFreshness}
+                    step="1"
+                    type="number"
+                    value={settings?.reviewFreshnessDays ?? 0}
+                    onChange={(value) => updateDraft("reviewFreshnessDays", value)}
+                  />
+                  <Field
+                    label={labels.autoReviews}
+                    readOnly
+                    type="text"
+                    value={budget?.autoReviewsToday ?? 0}
+                    onChange={() => undefined}
+                  />
+                  <ProviderSelect
+                    label={labels.providerBias}
+                    language={language}
+                    value={settings?.preferredProviderOrder?.[0] ?? "openrouter"}
+                    onChange={(value) =>
+                      updateDraft("preferredProviderOrder", value === "anthropic" ? ["anthropic", "openrouter"] : ["openrouter", "anthropic"])
+                    }
+                  />
+                </div>
+
+                <div style={{ marginTop: 18, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+                  <Button
+                    type="button"
+                    onClick={() => void saveSettings()}
+                    disabled={savingSettings || !settings}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  >
+                    {savingSettings ? <LoaderCircle size={16} className="animate-spin" /> : <Wallet size={16} />}
+                    {labels.save}
+                  </Button>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+                    {labels.savedBy}: {formatDate(locale, settings?.updatedAt)} {settings?.updatedBy ? `• ${settings.updatedBy}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div style={panelStyle}>
+                <div style={sectionEyebrowStyle}>{labels.budgetHeading}</div>
+                <div style={{ marginTop: 10, display: "grid", gap: 12 }}>
+                  <MiniStat icon={Zap} label={labels.autoReviews} value={String(budget?.autoReviewsToday ?? 0)} />
+                  <MiniStat
+                    icon={Wallet}
+                    label={labels.reviewBudget}
+                    value={formatCurrency(locale, budget?.actualSpendTodayUsd ?? 0)}
+                  />
+                  <MiniStat
+                    icon={Search}
+                    label={labels.budgetOn}
+                    value={budget?.costControlEnabled ? labels.stateYes : labels.stateNo}
+                  />
+                  <MiniStat
+                    icon={Bot}
+                    label={labels.scannedQueries}
+                    value={formatCompact(locale, snapshot.report?.scannedQueries ?? 0)}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {categories.length > 0 ? (
+              <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {categories.map((category) => (
+                  <span key={category} style={topicStyle}>
+                    {category}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <section style={{ marginTop: 32 }}>
+              <div style={{ fontSize: 22, fontWeight: 800 }}>{labels.candidates}</div>
+              <div style={{ marginTop: 18, display: "grid", gap: 16 }}>
+                {(snapshot.report?.candidates ?? []).length === 0 ? (
+                  <div style={{ color: "rgba(255,255,255,0.45)" }}>{labels.emptyCandidates}</div>
+                ) : (
+                  snapshot.report?.candidates.map((candidate) => {
+                    const review = latestReviews.get(candidate.fullName.toLowerCase());
+
+                    return (
+                      <article key={candidate.fullName} style={panelStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "space-between",
+                            gap: 16,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: "1 1 420px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                              <Link
+                                href={candidate.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  color: "white",
+                                  fontSize: 20,
+                                  fontWeight: 800,
+                                  textDecoration: "none",
+                                }}
+                              >
+                                {candidate.fullName}
+                              </Link>
+                              <span style={categoryBadgeStyle}>{prettyCategory(language, candidate.category)}</span>
+                            </div>
+                            <p style={descriptionStyle}>{candidate.description || "—"}</p>
+                          </div>
+                          <div style={scoreCardStyle}>
+                            <div style={metricLabelStyle}>Score</div>
+                            <div style={{ marginTop: 8, fontSize: 28, fontWeight: 800, color: "#f6c978" }}>
+                              {candidate.score.toFixed(1)}
+                            </div>
+                            <div style={{ marginTop: 12, display: "grid", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.62)" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <Star size={14} />
+                                {formatCompact(locale, candidate.stars)} stars
+                              </span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <Bot size={14} />
+                                {candidate.language || "Mixed"}
+                              </span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <Search size={14} />
+                                {formatDate(locale, candidate.pushedAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            marginTop: 18,
+                            display: "grid",
+                            gap: 14,
+                            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                          }}
+                        >
+                          <div style={detailCardStyle}>
+                            <div style={detailTitleStyle}>{labels.why}</div>
+                            <div style={detailBodyStyle}>{candidate.whyItMatches}</div>
+                          </div>
+                          <div style={detailCardStyle}>
+                            <div style={detailTitleStyle}>{labels.possibleUse}</div>
+                            <div style={detailBodyStyle}>{candidate.possibleUse}</div>
+                          </div>
+                        </div>
+
+                        {review ? (
+                          <div
+                            style={{
+                              marginTop: 18,
+                              borderRadius: 18,
+                              border: "1px solid rgba(232,145,45,0.18)",
+                              background: "rgba(232,145,45,0.06)",
+                              padding: 18,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                flexWrap: "wrap",
+                                alignItems: "center",
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                                <span style={recommendationBadgeStyle}>
+                                  {prettyRecommendation(language, review.recommendation)}
+                                </span>
+                                <span style={secondaryBadgeStyle}>
+                                  {labels.reviewStatus[review.status]}
+                                </span>
+                                <span style={secondaryBadgeStyle}>
+                                  fit {review.fitScore}/100
+                                </span>
+                              </div>
+                              <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 13 }}>
+                                {formatDate(locale, review.createdAt)} • {formatReviewCost(language, locale, review)}
+                              </div>
+                            </div>
+
+                            <div style={{ marginTop: 14, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+                              <div style={detailCardStyle}>
+                                <div style={detailTitleStyle}>{labels.ideaFit}</div>
+                                <div style={detailBodyStyle}>{review.whyItMatters || labels.emptyReview}</div>
+                              </div>
+                              <div style={detailCardStyle}>
+                                <div style={detailTitleStyle}>{labels.ideas}</div>
+                                <div style={detailBodyStyle}>
+                                  {review.implementationIdeas.length > 0 ? review.implementationIdeas.join(" • ") : labels.emptyReview}
+                                </div>
+                              </div>
+                            </div>
+
+                            {review.summary ? (
+                              <p style={{ marginTop: 14, color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 1.7 }}>
+                                {review.summary}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        {candidate.topics.length > 0 ? (
+                          <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {candidate.topics.map((topic) => (
+                              <span key={`${candidate.fullName}-${topic}`} style={topicStyle}>
+                                {topic}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div style={{ marginTop: 18 }}>
+                          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                            <Button
+                              type="button"
+                              onClick={() => void runManualReview(candidate)}
+                              disabled={reviewingRepo === candidate.fullName}
+                              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                            >
+                              {reviewingRepo === candidate.fullName ? (
+                                <LoaderCircle size={16} className="animate-spin" />
+                              ) : (
+                                <Search size={16} />
+                              )}
+                              {labels.reviewNow}
+                            </Button>
+                            {review ? (
+                              <Button
+                                type="button"
+                                onClick={() => void shipReviewToDev(candidate, review)}
+                                disabled={shippingRepo === review.id}
+                                className="inline-flex items-center gap-2 rounded-full border border-[#E8912D]/30 bg-[#E8912D]/10 text-white hover:bg-[#E8912D]/20"
+                              >
+                                {shippingRepo === review.id ? (
+                                  <LoaderCircle size={16} className="animate-spin" />
+                                ) : (
+                                  <Bot size={16} />
+                                )}
+                                {labels.shipNow}
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+
+            <section style={{ marginTop: 34 }}>
+              <div style={{ fontSize: 22, fontWeight: 800 }}>{labels.recentReviews}</div>
+              <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
+                {(snapshot.reviews ?? []).length === 0 ? (
+                  <div style={{ color: "rgba(255,255,255,0.45)" }}>{labels.emptyReview}</div>
+                ) : (
+                  snapshot.reviews.slice(0, 8).map((review) => (
+                    <div key={review.id} style={reviewRowStyle}>
+                      <div>
+                        <div style={{ color: "white", fontWeight: 700 }}>{review.fullName}</div>
+                        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 4 }}>
+                          {formatDate(locale, review.createdAt)} • {prettyRecommendation(language, review.recommendation)}
+                        </div>
+                      </div>
+                        <div style={{ color: "rgba(255,255,255,0.62)", fontSize: 13, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          <span>{labels.reviewStatus[review.status]}</span>
+                          <span>{review.provider || "n/a"}</span>
+                          <span>{formatReviewCost(language, locale, review)}</span>
+                        </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section style={{ marginTop: 34 }}>
+              <div style={{ fontSize: 22, fontWeight: 800 }}>{labels.runs}</div>
+              <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
+                {snapshot.recentRuns.length === 0 ? (
+                  <div style={{ color: "rgba(255,255,255,0.45)" }}>{labels.emptyRuns}</div>
+                ) : (
+                  snapshot.recentRuns.map((run) => (
+                    <div key={run.id} style={reviewRowStyle}>
+                      <div>
+                        <div style={{ color: "white", fontWeight: 700 }}>#{run.id}</div>
+                        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 4 }}>
+                          {formatDate(locale, run.startedAt)}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", color: "rgba(255,255,255,0.62)", fontSize: 13 }}>
+                        <span>{run.mode || "manual"}</span>
+                        <span>{run.status}</span>
+                        <span>{run.finished ? "finished" : "running"}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Field(props: {
+  label: string;
+  onChange: (value: number) => void;
+  readOnly?: boolean;
+  step?: string;
+  type: "number" | "text";
+  value: number | string;
+}) {
+  const { label, onChange, readOnly = false, step, type, value } = props;
+
+  return (
+    <label style={{ display: "grid", gap: 8 }}>
+      <span style={fieldLabelStyle}>{label}</span>
+      <input
+        type={type}
+        value={value}
+        readOnly={readOnly}
+        step={step}
+        onChange={(event) => onChange(Number(event.target.value))}
+        style={inputStyle}
+      />
+    </label>
+  );
+}
+
+function ToggleRow(props: {
+  checked: boolean;
+  label: string;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.03)",
+        padding: "14px 16px",
+      }}
+    >
+      <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 14 }}>{props.label}</span>
+      <input
+        type="checkbox"
+        checked={props.checked}
+        onChange={(event) => props.onChange(event.target.checked)}
+        style={{ width: 18, height: 18 }}
+      />
+    </label>
+  );
+}
+
+function ProviderSelect(props: {
+  label: string;
+  language: "fr" | "en";
+  onChange: (value: "anthropic" | "openrouter") => void;
+  value: "anthropic" | "openrouter";
+}) {
+  return (
+    <label style={{ display: "grid", gap: 8 }}>
+      <span style={fieldLabelStyle}>{props.label}</span>
+      <select
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value as "anthropic" | "openrouter")}
+        style={inputStyle}
+      >
+        <option value="openrouter">{copy[props.language].models.openrouter}</option>
+        <option value="anthropic">{copy[props.language].models.anthropic}</option>
+      </select>
+    </label>
+  );
+}
+
+function MiniStat(props: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+}) {
+  const Icon = props.icon;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.03)",
+        padding: "14px 16px",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          display: "grid",
+          placeItems: "center",
+          background: "rgba(232,145,45,0.12)",
+          color: "#f6c978",
+        }}
+      >
+        <Icon size={18} />
+      </div>
+      <div>
+        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>{props.label}</div>
+        <div style={{ marginTop: 4, color: "white", fontSize: 18, fontWeight: 800 }}>{props.value}</div>
+      </div>
+    </div>
+  );
+}
+
+const panelStyle: CSSProperties = {
+  marginTop: 28,
+  borderRadius: 22,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  padding: 22,
+};
+
+const pillLinkStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  padding: "10px 14px",
+  color: "white",
+  textDecoration: "none",
+};
+
+const metricCardStyle: CSSProperties = {
+  borderRadius: 20,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  padding: 18,
+};
+
+const metricLabelStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.45)",
+  fontSize: 12,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const metricValueStyle: CSSProperties = {
+  color: "white",
+  fontSize: 24,
+  fontWeight: 800,
+  marginTop: 10,
+};
+
+const sectionEyebrowStyle: CSSProperties = {
+  color: "#f6c978",
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const fieldLabelStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.5)",
+  fontSize: 12,
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+};
+
+const inputStyle: CSSProperties = {
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.04)",
+  color: "white",
+  padding: "12px 14px",
+};
+
+const categoryBadgeStyle: CSSProperties = {
+  borderRadius: 999,
+  background: "rgba(232,145,45,0.14)",
+  color: "#f6c978",
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const descriptionStyle: CSSProperties = {
+  marginTop: 10,
+  color: "rgba(255,255,255,0.58)",
+  fontSize: 14,
+  lineHeight: 1.7,
+};
+
+const scoreCardStyle: CSSProperties = {
+  minWidth: 170,
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.02)",
+  padding: 16,
+};
+
+const detailCardStyle: CSSProperties = {
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.02)",
+  padding: 16,
+};
+
+const detailTitleStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.42)",
+  fontSize: 12,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const detailBodyStyle: CSSProperties = {
+  marginTop: 8,
+  color: "rgba(255,255,255,0.8)",
+  fontSize: 14,
+  lineHeight: 1.7,
+};
+
+const topicStyle: CSSProperties = {
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.02)",
+  padding: "6px 10px",
+  color: "rgba(255,255,255,0.58)",
+  fontSize: 12,
+};
+
+const recommendationBadgeStyle: CSSProperties = {
+  borderRadius: 999,
+  background: "rgba(232,145,45,0.14)",
+  color: "#f6c978",
+  padding: "7px 11px",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const secondaryBadgeStyle: CSSProperties = {
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.04)",
+  color: "rgba(255,255,255,0.7)",
+  padding: "7px 11px",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+const reviewRowStyle: CSSProperties = {
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.02)",
+  padding: "14px 16px",
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 14,
+  flexWrap: "wrap",
+};

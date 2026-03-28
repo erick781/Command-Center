@@ -1,6 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 
 type Purpose = 'chat' | 'recommendations';
 type ProviderName = 'anthropic' | 'openrouter';
@@ -15,9 +15,14 @@ type ProviderCandidate = {
 
 type StreamWithFallbackOptions = {
   messages: Message[];
+  providerOrder?: ProviderName[];
   purpose: Purpose;
   system: string;
 };
+
+type GenerateWithFallbackOptions = StreamWithFallbackOptions;
+
+type GenerateResultWithFallback = Awaited<ReturnType<typeof generateText>>;
 
 const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'openrouter/auto';
@@ -28,8 +33,8 @@ function getEnv(name: string) {
   return value ? value : undefined;
 }
 
-function getProviderOrder(): ProviderName[] {
-  const parsed = (getEnv('AI_PROVIDER_ORDER') ?? 'anthropic,openrouter')
+function parseProviderOrder(value: string | undefined): ProviderName[] {
+  const parsed = (value ?? 'anthropic,openrouter')
     .split(',')
     .map((value) => value.trim().toLowerCase())
     .filter((value): value is ProviderName => {
@@ -37,6 +42,23 @@ function getProviderOrder(): ProviderName[] {
     });
 
   return parsed.length > 0 ? parsed : ['anthropic', 'openrouter'];
+}
+
+function getProviderOrder() {
+  return parseProviderOrder(getEnv('AI_PROVIDER_ORDER'));
+}
+
+function sortCandidatesByProviderOrder(
+  candidates: ProviderCandidate[],
+  providerOrder?: ProviderName[],
+) {
+  const order = providerOrder?.length ? providerOrder : getProviderOrder();
+  const rank = (provider: ProviderName) => {
+    const index = order.indexOf(provider);
+    return index === -1 ? order.length : index;
+  };
+
+  return [...candidates].sort((left, right) => rank(left.provider) - rank(right.provider));
 }
 
 function getOpenRouterProvider() {
@@ -130,12 +152,46 @@ function unavailableResponse() {
   );
 }
 
+function readNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function extractActualCostUsd(
+  provider: ProviderName,
+  result: GenerateResultWithFallback,
+) {
+  if (provider !== 'openrouter') {
+    return null;
+  }
+
+  const usageRaw =
+    result.usage && 'raw' in result.usage
+      ? (result.usage.raw as Record<string, unknown> | undefined)
+      : undefined;
+  const usageCost = readNumber(usageRaw?.cost);
+  if (usageCost !== null) {
+    return usageCost;
+  }
+
+  const responseBody =
+    result.response && typeof result.response === 'object'
+      ? (result.response.body as { usage?: { cost?: unknown } } | undefined)
+      : undefined;
+  const responseCost = readNumber(responseBody?.usage?.cost);
+  if (responseCost !== null) {
+    return responseCost;
+  }
+
+  return null;
+}
+
 export async function streamWithFallback({
   messages,
+  providerOrder,
   purpose,
   system,
 }: StreamWithFallbackOptions) {
-  const candidates = getCandidates(purpose);
+  const candidates = sortCandidatesByProviderOrder(getCandidates(purpose), providerOrder);
   if (candidates.length === 0) {
     console.error('[ai] No configured providers are available.');
     return unavailableResponse();
@@ -197,4 +253,57 @@ export async function streamWithFallback({
 
   console.error('[ai] All providers failed.', lastError);
   return unavailableResponse();
+}
+
+export async function generateWithFallback({
+  messages,
+  providerOrder,
+  purpose,
+  system,
+}: GenerateWithFallbackOptions) {
+  const candidates = sortCandidatesByProviderOrder(getCandidates(purpose), providerOrder);
+  if (candidates.length === 0) {
+    throw new Error("L'assistant est temporairement indisponible.");
+  }
+
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      const result = await generateText({
+        maxRetries: 0,
+        messages,
+        model: candidate.createModel(),
+        system,
+      });
+
+      const text = result.text?.trim();
+      if (!text) {
+        throw new Error(
+          `Provider returned an empty response: ${candidate.provider}:${candidate.modelId}`,
+        );
+      }
+
+      return {
+        actualCostUsd: extractActualCostUsd(candidate.provider, result),
+        modelId: candidate.modelId,
+        provider: candidate.provider,
+        resolvedModelId:
+          typeof result.response?.modelId === 'string' && result.response.modelId.trim()
+            ? result.response.modelId
+            : candidate.modelId,
+        text,
+        usage: result.usage,
+      };
+    } catch (error) {
+      lastError = error;
+      console.error(
+        `[ai] ${candidate.provider}:${candidate.modelId} failed during text generation.`,
+        error,
+      );
+    }
+  }
+
+  console.error('[ai] All providers failed.', lastError);
+  throw new Error("L'assistant est temporairement indisponible.");
 }

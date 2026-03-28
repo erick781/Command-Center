@@ -1,5 +1,4 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -18,9 +17,8 @@ type StrategyMemoryPayload = {
   historyEntry?: StrategyHistoryEntry;
 };
 
-const storageFilePath =
-  process.env.STRATEGY_MEMORY_FILE ||
-  path.join("/tmp", "command-center-v2", "strategy-memory.json");
+const storageDirectory = "/tmp/command-center-v2";
+const storageFilePath = `${storageDirectory}/strategy-memory.json`;
 const historyLimit = 12;
 
 export const runtime = "nodejs";
@@ -45,7 +43,7 @@ async function readStore(): Promise<StrategyMemoryStore> {
 }
 
 async function writeStore(store: StrategyMemoryStore) {
-  await mkdir(path.dirname(storageFilePath), { recursive: true });
+  await mkdir(storageDirectory, { recursive: true });
   await writeFile(storageFilePath, JSON.stringify(store, null, 2), "utf8");
 }
 

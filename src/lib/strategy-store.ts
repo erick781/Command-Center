@@ -1,3 +1,4 @@
+import { getBackendApiBase } from "@/lib/backend-api";
 import {
   createEmptyStrategyProfile,
   createEmptyStrategyRequest,
@@ -29,20 +30,6 @@ export type StrategyUserContext = {
   role: string | null;
   userId: string;
 };
-
-function getApiBase() {
-  const explicitBase =
-    process.env.INTERNAL_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-
-  if (normalizeString(explicitBase)) {
-    return normalizeString(explicitBase).replace(/\/$/, "");
-  }
-
-  const port = normalizeString(process.env.PORT) || "3000";
-  return `http://127.0.0.1:${port}`;
-}
 
 function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -680,7 +667,7 @@ async function fetchSeedClient(input: {
     return null;
   }
 
-  const base = getApiBase();
+  const base = getBackendApiBase();
   const clientById = input.clientId
     ? await fetch(`${base}/api/client-hub/clients/${encodeURIComponent(input.clientId)}`, {
         cache: "no-store",

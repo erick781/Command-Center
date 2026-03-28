@@ -9,7 +9,7 @@
 - Ads refresh service is still live on port `8099`
 - OpenRouter fallback is deployed in V2 and Anthropic remains primary
 - `n8n` is still running on the VPS as Docker container `n8n-9m9r-n8n-1` on host port `32768`
-- `n8n` is not currently wired into the Command Center app flow
+- `n8n` is now wired into `Ops` through Automations + Repo Radar, and Repo Radar can trigger deep reviews back into V2 through an internal token route
 - `/api/strategy-engine/*` now routes correctly through Nginx to Next.js on port `3001`
 - Strategy Engine phase 1 MVP is deployed, but the new Supabase tables are not applied yet
 - While those new tables are missing, the Strategy Engine now falls back safely to `strategy_drafts` compatibility storage instead of crashing
@@ -22,6 +22,18 @@
 5. Continue UX polish only after the authenticated strategy flow is confirmed
 
 ## RECENT CODEX CHANGES
+- Added `docs/SPRINT-12H-2026-03-24.md` to lock the next execution order around product clarity, client dossier strength, output quality, DOCX polish, Ops coherence, and hardening
+- Archived the old frontend surfaces so they no longer compete with the main workflow:
+  - `src/app/hub/page.tsx`
+  - `src/app/tracker/page.tsx`
+  - `src/app/rapports/page.tsx`
+  - `src/app/strategie/page.tsx`
+  - `src/app/workspace/[id]/page.tsx`
+  - `src/app/ops/legacy/page.tsx`
+  - `src/app/ops/page.tsx`
+  - `src/app/new/page.tsx`
+  - `src/app/clients/page.tsx`
+- Redesigned `src/app/runs/page.tsx` into a stronger deliverable library view instead of a plain run list
 - Deployed OpenRouter fallback for AI requests in `src/lib/ai.ts`
 - Kept Anthropic primary and OpenRouter fallback in production
 - Upgraded `src/app/hub/page.tsx` to feel much closer to the V1 command center
@@ -41,15 +53,29 @@
 - Tightened the shared shell in `src/components/nav.tsx` and `src/app/layout.tsx`
 - Renamed `src/middleware.ts` to `src/proxy.ts` for Next 16 compatibility
 - Synced changes to the VPS, built successfully, restarted `command-center-v2.service`, and verified live `/api/strategy-engine/*` routing through Nginx
+- Added Repo Radar deep-review persistence and cost controls in:
+  - `src/lib/repo-radar-store.ts`
+  - `src/lib/repo-radar-review.ts`
+  - `src/app/api/ops/repo-radar/route.ts`
+  - `src/app/api/ops/repo-radar/review/route.ts`
+  - `src/app/ops/repo-radar/page.tsx`
+- Updated `command-center-agent/scripts/setup_repo_radar_workflow.py` so the live `Repo Radar - Command Center` workflow posts shortlisted repos back into V2 for deeper AI review
+- Verified live:
+  - anonymous `/api/ops/repo-radar` returns `401`
+  - internal token POST to `/api/ops/repo-radar/review` returns `200`
+  - an auto-triggered `n8n` run created a real `source:auto` deep review in `.ops-data/repo-radar-reviews.json`
 
 ## FILE OWNERSHIP / TOUCH WITH CARE
 - Codex recently touched:
+  - `docs/SPRINT-12H-2026-03-24.md`
   - `src/lib/ai.ts`
   - `src/app/hub/page.tsx`
   - `src/app/clients/page.tsx`
   - `src/app/strategie/page.tsx`
   - `src/app/admin/page.tsx`
   - `src/app/strategy-sync/route.ts`
+  - `src/app/ops/legacy/page.tsx`
+  - `src/app/runs/page.tsx`
   - `src/app/tracker/page.tsx`
   - `src/app/rapports/page.tsx`
   - `src/app/api/strategy-engine/context/route.ts`
@@ -100,7 +126,7 @@
 - Protecting and shipping V1 parity improvements without breaking Claude's base work
 - Keeping the Strategy Engine phase 1 usable in production even before the new SQL tables are migrated
 - Preparing the next storage cut so the app can move cleanly from compatibility memory to fully normalized strategy tables
-- Keeping `n8n` available for background automations only
+- Using `n8n` for background automations and Repo Radar deep-review orchestration, while keeping live chat/streaming AI inside V2
 
 ## COLLABORATION PROTOCOL
 1. Read this file before editing shared areas.
@@ -140,6 +166,14 @@
     - `src/lib/strategy-rules.ts`
     - `src/lib/strategy-storage.ts`
     - `supabase/migrations/20260321_strategy_memory.sql`
+  - Repo Radar automation + deep review + cost control shipped in:
+    - `src/lib/ai.ts`
+    - `src/lib/repo-radar-store.ts`
+    - `src/lib/repo-radar-review.ts`
+    - `src/app/api/ops/repo-radar/route.ts`
+    - `src/app/api/ops/repo-radar/review/route.ts`
+    - `src/app/ops/repo-radar/page.tsx`
+    - `../command-center-agent/scripts/setup_repo_radar_workflow.py`
 - Claude Cowork:
   - best next tasks are validating the authenticated strategy flow, applying migrations if access exists, or validating admin behavior
 
