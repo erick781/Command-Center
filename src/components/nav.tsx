@@ -47,6 +47,36 @@ const navCopy = {
   },
 } as const;
 
+function NotifButton() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setEnabled(Notification.permission === "granted");
+    }
+  }, []);
+  
+  if (enabled) return null;
+  
+  return (
+    <button
+      onClick={async () => {
+        if ("Notification" in window && "serviceWorker" in navigator) {
+          try {
+            await navigator.serviceWorker.register("/sw.js");
+            const perm = await Notification.requestPermission();
+            if (perm === "granted") {
+              setEnabled(true);
+            }
+          } catch(e) { console.error(e); }
+        }
+      }}
+      className="rounded-full border border-[#E8912D]/20 bg-[#E8912D]/10 px-3 py-1.5 text-[12px] font-medium text-[#f4c87d] transition hover:bg-[#E8912D]/20"
+    >
+      Activer notifs
+    </button>
+  );
+}
+
 export function Nav() {
   const { language } = useLanguage();
   const path = usePathname();
