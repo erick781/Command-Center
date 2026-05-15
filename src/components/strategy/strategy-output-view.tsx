@@ -18,7 +18,7 @@ function Section({
   return (
     <Card className="border-white/[0.06] bg-[#1a1a1f]">
       <CardHeader className="pb-2">
-        <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+        <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
           {title}
         </CardTitle>
       </CardHeader>
@@ -47,7 +47,7 @@ export function StrategyOutputView({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Badge className="border border-[#E8912D]/20 bg-[#E8912D]/10 text-[#f6c978]">
+        <Badge className="border border-[#6366f1]/20 bg-[#6366f1]/10 text-indigo-300">
           Strategy Output
         </Badge>
         {meta ? (
@@ -59,7 +59,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Executive Summary
           </CardTitle>
         </CardHeader>
@@ -74,7 +74,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Diagnosis
           </CardTitle>
         </CardHeader>
@@ -120,7 +120,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             KPI Interpretation
           </CardTitle>
         </CardHeader>
@@ -147,7 +147,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Test Plan
           </CardTitle>
         </CardHeader>
@@ -169,7 +169,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Client-facing Summary
           </CardTitle>
         </CardHeader>
@@ -182,7 +182,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Internal Execution Plan
           </CardTitle>
         </CardHeader>
@@ -202,7 +202,7 @@ export function StrategyOutputView({
 
       <Card className="border-white/[0.06] bg-[#1a1a1f]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
+          <CardTitle className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
             Confidence Note
           </CardTitle>
         </CardHeader>

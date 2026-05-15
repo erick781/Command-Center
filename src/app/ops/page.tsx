@@ -186,7 +186,7 @@ const opsCopy = {
   },
 } as const;
 
-const shellFont = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const shellFont = "'Instrument Sans', system-ui, sans-serif";
 
 function formatCurrency(locale: string, amount: number) {
   return new Intl.NumberFormat(locale, {
@@ -222,31 +222,18 @@ function prettifyKey(value: string) {
 function MetricCard(props: {
   accent?: string;
   label: string;
-  sublabel?: string;
   value: string;
 }) {
-  const { accent = "#E8912D", label, sublabel, value } = props;
+  const { accent = "#E8912D", label, value } = props;
 
   return (
-    <div
-      style={{
-        borderRadius: 20,
-        border: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(255,255,255,0.03)",
-        padding: 18,
-      }}
-    >
-      <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", flex: "1 1 0", minWidth: 0 }}>
+      <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.06em", flex: 1, minWidth: 0 }}>
         {label}
-      </div>
-      <div style={{ color: accent, fontSize: 28, fontWeight: 800, marginTop: 10, letterSpacing: "-0.03em" }}>
+      </span>
+      <span style={{ color: accent, fontSize: 16, fontWeight: 700, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" as const }}>
         {value}
-      </div>
-      {sublabel ? (
-        <div style={{ color: "rgba(255,255,255,0.42)", fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
-          {sublabel}
-        </div>
-      ) : null}
+      </span>
     </div>
   );
 }
@@ -285,6 +272,7 @@ function SummaryList(props: {
                 border: "1px solid rgba(255,255,255,0.06)",
                 background: "rgba(255,255,255,0.02)",
                 padding: "12px 14px",
+                transition: "background 0.15s",
               }}
             >
               <div style={{ minWidth: 0 }}>
@@ -444,59 +432,34 @@ export default function OpsPage() {
           </p>
         </div>
 
-        <section
-          style={{
-            display: "grid",
-            gap: 16,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          {copy.links.map((item) => {
-            const Icon = item.icon;
+        <nav>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            {copy.links.map((item, idx) => {
+              const Icon = item.icon;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: "block",
-                  textDecoration: "none",
-                  borderRadius: 22,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "rgba(255,255,255,0.03)",
-                  padding: 22,
-                  color: "white",
-                }}
-              >
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "rgba(232,145,45,0.12)",
-                    color: "#f6c978",
-                  }}
-                >
-                  <Icon size={18} />
-                </div>
-                <div style={{ marginTop: 18, fontSize: 18, fontWeight: 700 }}>{item.title}</div>
-                <p
-                  style={{
-                    marginTop: 8,
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {item.description}
-                </p>
-              </Link>
-            );
-          })}
-        </section>
+              return (
+                <li key={item.href} style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                  <Link
+                    href={item.href}
+                    className="transition-colors hover:bg-white/[0.04]"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "14px 18px",
+                      textDecoration: "none",
+                      color: "white",
+                    }}
+                  >
+                    <Icon size={16} aria-hidden="true" style={{ color: "#f6c978", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>{item.title}</span>
+                    <span style={{ color: "rgba(255,255,255,0.38)", fontSize: 13, marginLeft: "auto" }}>{item.description}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
         <section
           style={{
@@ -504,7 +467,7 @@ export default function OpsPage() {
             borderRadius: 28,
             border: "1px solid rgba(255,255,255,0.08)",
             background:
-              "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
+              "rgba(255,255,255,0.03)",
             padding: 24,
           }}
         >
@@ -631,43 +594,40 @@ export default function OpsPage() {
               <div
                 style={{
                   marginTop: 24,
-                  display: "grid",
-                  gap: 16,
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  overflow: "hidden",
+                  background: "rgba(255,255,255,0.02)",
                 }}
               >
                 <MetricCard
                   label={copy.costToday}
-                  sublabel={`${formatCompact(locale, usage.today.calls)} calls`}
                   value={formatCurrency(locale, usage.today.totalCost)}
                 />
                 <MetricCard
                   accent="#ffd980"
                   label={copy.callsToday}
-                  sublabel={`${formatCompact(locale, usage.today.totalTokens)} tokens`}
                   value={formatCompact(locale, usage.today.calls)}
                 />
                 <MetricCard
                   label={copy.costMonth}
-                  sublabel={`${formatCompact(locale, usage.month.calls)} calls`}
                   value={formatCurrency(locale, usage.month.totalCost)}
                 />
                 <MetricCard
                   accent="#f0b56b"
                   label={copy.callsMonth}
-                  sublabel={`${formatCompact(locale, usage.month.totalTokens)} tokens`}
                   value={formatCompact(locale, usage.month.calls)}
                 />
                 <MetricCard
                   accent="#f7d58f"
                   label={copy.avgCost}
-                  sublabel={`${copy.totalTokens}: ${formatCompact(locale, usage.today.totalTokens)}`}
                   value={formatCurrency(locale, usage.today.averageCostPerCall)}
                 />
                 <MetricCard
                   accent="#f7d58f"
                   label={copy.cacheHit}
-                  sublabel={`${formatCompact(locale, usage.today.cachedTokens)} cached`}
                   value={`${formatPercent(locale, usage.today.cacheHitRate)}%`}
                 />
               </div>
@@ -697,7 +657,7 @@ export default function OpsPage() {
                         <Activity size={16} />
                         <span style={{ fontSize: 14, fontWeight: 700 }}>{prettifyKey(key)}</span>
                       </div>
-                      <div style={{ marginTop: 12, color: "white", fontSize: 24, fontWeight: 800 }}>
+                      <div style={{ marginTop: 12, color: "white", fontSize: 24, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
                         {formatCompact(locale, remaining)}
                       </div>
                       <div style={{ marginTop: 6, color: "rgba(255,255,255,0.42)", fontSize: 13 }}>

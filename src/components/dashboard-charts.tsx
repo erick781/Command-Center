@@ -43,7 +43,7 @@ interface TrendsResponse {
   updated_at: string;
 }
 
-const COLORS = ["#E8912D", "#f6c978", "#16a34a", "#60a5fa", "#a78bfa", "#f472b6", "#34d399", "#fbbf24"];
+const COLORS = ["#6366f1", "#a5b4fc", "#16a34a", "#60a5fa", "#a78bfa", "#f472b6", "#34d399", "#fbbf24"];
 
 const HEALTH_COLORS: Record<string, string> = {
   green: "#16a34a",
@@ -129,7 +129,7 @@ export function DashboardCharts() {
     name: c.name,
     value: c.value,
     icon: () => (
-      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-md bg-[#E8912D]/15 text-[9px] font-bold text-[#f6c978]">
+      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-md bg-[#6366f1]/15 text-[9px] font-bold text-indigo-300">
         {c.name.slice(0, 2).toUpperCase()}
       </span>
     ),
@@ -165,8 +165,8 @@ export function DashboardCharts() {
               <AreaChart data={activityData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradLivrables" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#E8912D" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#E8912D" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradStrategies" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
@@ -189,7 +189,7 @@ export function DashboardCharts() {
                 <Area
                   type="monotone"
                   dataKey="Livrables"
-                  stroke="#E8912D"
+                  stroke="#6366f1"
                   strokeWidth={2}
                   fill="url(#gradLivrables)"
                 />
@@ -205,7 +205,7 @@ export function DashboardCharts() {
           </div>
           <div className="mt-3 flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#E8912D]" />
+              <span className="h-2 w-2 rounded-full bg-[#6366f1]" />
               <span className="text-xs text-white/45">Livrables</span>
             </div>
             <div className="flex items-center gap-2">

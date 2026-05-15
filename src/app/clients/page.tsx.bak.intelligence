@@ -45,7 +45,6 @@ import {
   downloadDeliverableDocx,
   downloadDeliverableMarkdown,
 } from "@/lib/deliverable-download";
-import { mdToHtml } from "@/lib/render-deliverable";
 
 type StrategyRecord = {
   created_at?: string;
@@ -104,7 +103,7 @@ type Client = {
 };
 
 type ViewMode = "list" | "detail" | "strategy";
-type DetailSection = "overview" | "sources" | "memory" | "history" | "intelligence";
+type DetailSection = "overview" | "sources" | "memory" | "history";
 type ClientListFilter =
   | "all"
   | "active"
@@ -167,7 +166,6 @@ const detailSections: Array<{ key: DetailSection; short: string }> = [
   { key: "sources", short: "Sources" },
   { key: "memory", short: "Mémoire" },
   { key: "history", short: "Historique" },
-  { key: "intelligence", short: "🧠 Intel" },
 ];
 
 const contextBaseFields: Array<{
@@ -769,8 +767,6 @@ export default function ClientsPage() {
   const [loadingClients, setLoadingClients] = useState(true);
   const [openingClientId, setOpeningClientId] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [intelligenceData, setIntelligenceData] = useState<Record<string, unknown> | null>(null);
-  const [intelligenceEnriching, setIntelligenceEnriching] = useState(false);
   const [strategiesLoading, setStrategiesLoading] = useState(false);
   const [runsLoading, setRunsLoading] = useState(false);
   const [assetsLoading, setAssetsLoading] = useState(false);
@@ -945,11 +941,6 @@ export default function ClientsPage() {
     setOpeningClientId(client.id);
     setView("detail");
     setDetailSection("overview");
-    setIntelligenceData(null);
-    fetch(`${API_BASE}/api/intelligence/client/${client.id}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.data) setIntelligenceData(d.data); })
-      .catch(() => null);
     setStrategyView(null);
     setSelectedClient(client);
     setContextStatus(null);
@@ -968,7 +959,7 @@ export default function ClientsPage() {
       fetch(`${API_BASE}/api/client-hub/clients/${client.id}`).then((response) =>
         response.ok ? response.json() : client,
       ),
-      fetch(`/api/workflow/strategies?clientName=${encodeURIComponent(client.name)}`, { credentials: "include" }).then((response) =>
+      fetch(`${API_BASE}/api/strategy/past/${encodeURIComponent(client.name)}`).then((response) =>
         response.ok ? response.json() : { strategies: [] },
       ),
       fetch(`/api/client-context/${client.id}`, {
@@ -1556,7 +1547,9 @@ export default function ClientsPage() {
                   <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-400">
                     {strategyTitles[key] || key}
                   </div>
-                  <div className="prose prose-invert prose-sm max-w-none text-white/65" dangerouslySetInnerHTML={{ __html: mdToHtml(value) }} />
+                  <div className="whitespace-pre-line text-sm leading-relaxed text-white/65">
+                    {value}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -1571,31 +1564,6 @@ export default function ClientsPage() {
       </div>
     );
   }
-
-  const triggerEnrich = async (clientId: string) => {
-    setIntelligenceEnriching(true);
-    try {
-      await fetch(`${API_BASE}/api/intelligence/client/${clientId}/enrich`, { method: "POST" });
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        try {
-          const r = await fetch(`${API_BASE}/api/intelligence/client/${clientId}`);
-          const d = await r.json() as { status?: string; data?: Record<string, unknown> };
-          if (d?.data && d?.status !== "running" && d?.status !== "queued") {
-            setIntelligenceData(d.data);
-            clearInterval(poll);
-            setIntelligenceEnriching(false);
-          } else if (attempts >= 20) {
-            clearInterval(poll);
-            setIntelligenceEnriching(false);
-          }
-        } catch { /* ignore poll errors */ }
-      }, 3000);
-    } catch {
-      setIntelligenceEnriching(false);
-    }
-  };
 
   if (view === "detail" && selectedClient) {
     return (
@@ -2545,195 +2513,6 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
               </div>
-            </>
-          ) : null}
-
-          {detailSection === "intelligence" ? (
-            <>
-              <div className="mt-6 flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-semibold text-white">🧠 Intelligence client</div>
-                  <div className="mt-1 text-xs text-white/40">
-                    {intelligenceData
-                      ? `Dernière mise à jour: ${new Date((intelligenceData as {enriched_at?: string}).enriched_at ?? "").toLocaleString("fr-CA")}`
-                      : "Aucune donnée — cliquez sur Actualiser pour enrichir ce profil."}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={intelligenceEnriching}
-                  onClick={() => selectedClient && void triggerEnrich(selectedClient.id)}
-                  className="flex items-center gap-2 rounded-full border border-[#E8912D]/30 bg-[#E8912D]/10 px-4 py-2 text-xs font-semibold text-[#f6c978] transition hover:bg-[#E8912D]/20 disabled:opacity-50"
-                >
-                  {intelligenceEnriching ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  )}
-                  {intelligenceEnriching ? "Enrichissement en cours…" : "🔄 Actualiser"}
-                </button>
-              </div>
-
-              {intelligenceData ? (
-                <>
-                  {(intelligenceData as {ai_summary?: string}).ai_summary ? (
-                    <Card className="mt-4 border-[#E8912D]/20 bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-[#E8912D]" />
-                          <div className="text-xs font-semibold uppercase tracking-widest text-[#E8912D]">Résumé IA — Claude Haiku</div>
-                        </div>
-                        <div className="text-sm leading-7 text-white/75 whitespace-pre-wrap">
-                          {(intelligenceData as {ai_summary: string}).ai_summary}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : null}
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {(intelligenceData as {website?: Record<string, unknown>}).website &&
-                     !(intelligenceData as {website?: {error?: string}}).website?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <Globe2 className="h-4 w-4 text-emerald-400" />
-                            <div className="text-sm font-semibold text-white">Site web</div>
-                          </div>
-                          <div className="text-xs text-white/55 leading-5">
-                            {String((intelligenceData as {website: {title?: string}}).website.title ?? "")}
-                          </div>
-                          {(intelligenceData as {website: {description?: string}}).website.description ? (
-                            <div className="mt-2 text-xs text-white/40 line-clamp-3 leading-5">
-                              {String((intelligenceData as {website: {description?: string}}).website.description ?? "")}
-                            </div>
-                          ) : null}
-                          {Array.isArray((intelligenceData as {website: {tech_stack?: string[]}}).website.tech_stack) ? (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {((intelligenceData as {website: {tech_stack: string[]}}).website.tech_stack).slice(0, 5).map((t: string) => (
-                                <Badge key={t} className="bg-white/[0.04] text-[10px] text-white/45">{t}</Badge>
-                              ))}
-                            </div>
-                          ) : null}
-                          {(intelligenceData as {website: {main_cta?: string}}).website.main_cta ? (
-                            <div className="mt-2 text-xs text-[#f6c978]">
-                              CTA: {String((intelligenceData as {website: {main_cta?: string}}).website.main_cta ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-
-                    {(intelligenceData as {instagram?: Record<string, unknown>}).instagram &&
-                     !(intelligenceData as {instagram?: {error?: string}}).instagram?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <span className="text-pink-400 text-base leading-none">📸</span>
-                            <div className="text-sm font-semibold text-white">Instagram</div>
-                            {(intelligenceData as {instagram: {handle?: string}}).instagram.handle ? (
-                              <Badge className="bg-pink-500/10 text-pink-300 text-[10px]">
-                                @{String((intelligenceData as {instagram: {handle?: string}}).instagram.handle ?? "")}
-                              </Badge>
-                            ) : null}
-                          </div>
-                          {(intelligenceData as {instagram: {followers?: number}}).instagram.followers != null ? (
-                            <div className="text-2xl font-bold text-white tracking-tight">
-                              {Number((intelligenceData as {instagram: {followers?: number}}).instagram.followers).toLocaleString("fr-CA")}
-                              <span className="ml-1 text-xs font-normal text-white/40">abonnés</span>
-                            </div>
-                          ) : null}
-                          {(intelligenceData as {instagram: {bio?: string}}).instagram.bio ? (
-                            <div className="mt-2 text-xs text-white/45 leading-5 line-clamp-3">
-                              {String((intelligenceData as {instagram: {bio?: string}}).instagram.bio ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-
-                    {(intelligenceData as {linkedin?: Record<string, unknown>}).linkedin &&
-                     !(intelligenceData as {linkedin?: {error?: string}}).linkedin?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <span className="text-blue-400 text-base leading-none">💼</span>
-                            <div className="text-sm font-semibold text-white">LinkedIn</div>
-                          </div>
-                          <div className="text-xs font-medium text-white/65">
-                            {String((intelligenceData as {linkedin: {company_name?: string}}).linkedin.company_name ?? "")}
-                          </div>
-                          {(intelligenceData as {linkedin: {description?: string}}).linkedin.description ? (
-                            <div className="mt-2 text-xs text-white/40 line-clamp-3 leading-5">
-                              {String((intelligenceData as {linkedin: {description?: string}}).linkedin.description ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-indigo-400" />
-                          <div className="text-sm font-semibold text-white">Mentions Slack</div>
-                          <Badge className="bg-white/[0.04] text-white/45">
-                            {((intelligenceData as {slack_mentions?: unknown[]}).slack_mentions ?? []).length}
-                          </Badge>
-                        </div>
-                        {((intelligenceData as {slack_mentions?: unknown[]}).slack_mentions ?? []).length === 0 ? (
-                          <div className="text-xs text-white/35">Aucune mention trouvée.</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {((intelligenceData as {slack_mentions: Array<{text?: string; username?: string; channel?: string}>}).slack_mentions).slice(0, 4).map((m, i) => (
-                              <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-                                <div className="text-[10px] text-white/30">#{m.channel} · {m.username}</div>
-                                <div className="mt-1 text-xs text-white/55 line-clamp-2 leading-5">{m.text}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-emerald-400" />
-                          <div className="text-sm font-semibold text-white">Docs Google Drive</div>
-                          <Badge className="bg-white/[0.04] text-white/45">
-                            {((intelligenceData as {gdrive_docs?: unknown[]}).gdrive_docs ?? []).length}
-                          </Badge>
-                        </div>
-                        {((intelligenceData as {gdrive_docs?: unknown[]}).gdrive_docs ?? []).length === 0 ? (
-                          <div className="text-xs text-white/35">Aucun document trouvé.</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {((intelligenceData as {gdrive_docs: Array<{name?: string; webViewLink?: string}>}).gdrive_docs).slice(0, 5).map((d, i) => (
-                              <div key={i} className="flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-                                <FileDown className="h-3.5 w-3.5 flex-shrink-0 text-white/30" />
-                                <div className="min-w-0 flex-1 truncate text-xs text-white/60">{d.name}</div>
-                                {d.webViewLink ? (
-                                  <a href={d.webViewLink} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="h-3 w-3 text-white/25 hover:text-white/60" />
-                                  </a>
-                                ) : null}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              ) : (
-                <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] py-12 text-center">
-                  <div className="text-3xl">🧠</div>
-                  <div className="text-sm font-semibold text-white">Aucune intelligence disponible</div>
-                  <div className="text-xs text-white/40">Cliquez sur "Actualiser" pour enrichir ce profil client.</div>
-                </div>
-              )}
             </>
           ) : null}
         </main>

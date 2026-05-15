@@ -30,7 +30,7 @@ export function LanguageToggle(props: {
             className={cn(
               "rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] transition",
               active
-                ? "bg-[#E8912D] text-[#17140f] shadow-[0_10px_20px_rgba(232,145,45,0.18)]"
+                ? "bg-[#6366f1] text-white shadow-[0_10px_20px_rgba(232,145,45,0.18)]"
                 : "text-white/50 hover:bg-white/[0.05] hover:text-white",
             )}
           >

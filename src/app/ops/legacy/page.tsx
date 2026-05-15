@@ -66,7 +66,7 @@ const labelMap = {
   tracker: "Tracker",
 } as const;
 
-const shellFont = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const shellFont = "'Instrument Sans', system-ui, sans-serif";
 
 export default function LegacyArchivePage() {
   const { language } = useLanguage();
@@ -107,7 +107,7 @@ export default function LegacyArchivePage() {
               textTransform: "uppercase",
             }}
           >
-            <Archive size={14} />
+            <Archive size={14} aria-hidden="true" />
             {labels.badge}
           </div>
 
@@ -150,7 +150,7 @@ export default function LegacyArchivePage() {
                 fontSize: 14,
               }}
             >
-              <Layers3 size={16} color="#f6c978" />
+              <Layers3 size={16} color="#f6c978" aria-hidden="true" />
               <span>
                 {labels.movedFrom} <strong>{fromLabel}</strong>
               </span>
@@ -169,55 +169,31 @@ export default function LegacyArchivePage() {
               fontWeight: 700,
             }}
           >
-            <Sparkles size={16} />
+            <Sparkles size={16} aria-hidden="true" />
             {labels.replacements}
           </div>
 
-          <div
-            style={{
-              marginTop: 16,
-              display: "grid",
-              gap: 16,
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            }}
-          >
-            {labels.cards.map((card) => (
-              <Link
-                key={card.href}
-                href={card.href}
-                style={{
-                  textDecoration: "none",
-                  color: "white",
-                  borderRadius: 24,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))",
-                  padding: 22,
-                }}
-              >
-                <div
+          <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            {labels.cards.map((card, idx) => (
+              <li key={card.href} style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                <Link
+                  href={card.href}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
                     gap: 12,
+                    padding: "14px 18px",
+                    textDecoration: "none",
+                    color: "white",
                   }}
                 >
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>{card.title}</div>
-                  <ArrowRight size={18} color="#f6c978" />
-                </div>
-                <div
-                  style={{
-                    marginTop: 10,
-                    color: "rgba(255,255,255,0.54)",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {card.description}
-                </div>
-              </Link>
+                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{card.title}</span>
+                  <span style={{ color: "rgba(255,255,255,0.38)", fontSize: 13 }}>{card.description}</span>
+                  <ArrowRight size={16} aria-hidden="true" color="#f6c978" style={{ flexShrink: 0 }} />
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       </main>
     </div>

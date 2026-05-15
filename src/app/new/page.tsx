@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -60,9 +60,9 @@ const C = {
   border: "rgba(255,255,255,0.06)",
 } as const;
 
-const font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const font = "'Instrument Sans', system-ui, sans-serif";
 
-const pageVariants = {
+const basePageVariants = {
   enter: { opacity: 0, x: 40 },
   center: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -40 },
@@ -374,6 +374,7 @@ function ProgressBar(props: {
           return (
             <div
               key={step}
+              aria-current={active ? "step" : undefined}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
             >
               <div
@@ -967,6 +968,10 @@ export default function NewWorkflowPage() {
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const pageVariants = reducedMotion
+    ? { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
+    : basePageVariants;
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [saveWarning, setSaveWarning] = useState<string | null>(null);
   const [output, setOutput] = useState("");
@@ -2020,7 +2025,7 @@ export default function NewWorkflowPage() {
                     {copy.back}
                   </button>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div role="status" aria-live="polite" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button
                       type="button"
                       onClick={resetFlow}

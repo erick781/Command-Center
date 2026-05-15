@@ -131,6 +131,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await fetch(`${getBackendApiBase()}/api/strategy/deliverable`, {
+      signal: AbortSignal.timeout(300_000),
       body: JSON.stringify({
         answers,
         client_id: client.id,

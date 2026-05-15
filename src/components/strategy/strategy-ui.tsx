@@ -9,7 +9,7 @@ export const strategyInputClassName =
   "border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/25";
 
 export const strategyNativeSelectClassName =
-  "h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition focus:border-[#E8912D]";
+  "h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition focus:border-[#6366f1]";
 
 export function StrategyPanel({
   title,

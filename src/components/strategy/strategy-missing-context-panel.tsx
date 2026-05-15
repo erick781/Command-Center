@@ -168,7 +168,7 @@ export function StrategyMissingContextPanel({
           {connectedSources.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {connectedSources.map((s) => (
-                <Badge key={s} className="border border-[#E8912D]/25 bg-[#E8912D]/10 text-[#f6c978] text-xs">
+                <Badge key={s} className="border border-[#6366f1]/25 bg-[#6366f1]/10 text-indigo-300 text-xs">
                   {s}
                 </Badge>
               ))}
@@ -206,7 +206,7 @@ export function StrategyMissingContextPanel({
                   i < currentIdx
                     ? "bg-green-400/70"
                     : i === currentIdx
-                    ? "bg-[#E8912D] scale-125"
+                    ? "bg-[#6366f1] scale-125"
                     : "bg-white/15"
                 }`}
               />
@@ -222,11 +222,11 @@ export function StrategyMissingContextPanel({
         >
           {/* Agent bubble (left) */}
           <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#E8912D]/20 text-sm font-semibold text-[#E8912D]">
+            <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#6366f1]/20 text-sm font-semibold text-indigo-400">
               S
             </div>
             <div className="flex-1 space-y-2">
-              <div className="text-[11px] font-medium text-[#E8912D]/70 uppercase tracking-wider">
+              <div className="text-[11px] font-medium text-indigo-400/70 uppercase tracking-wider">
                 Strategy Agent
               </div>
               <div className="rounded-2xl rounded-tl-md border border-white/[0.08] bg-white/[0.04] px-4 py-3">
@@ -245,7 +245,7 @@ export function StrategyMissingContextPanel({
                   onClick={() =>
                     setConnectedSources((prev) => [...prev, sourceSuggestion.label])
                   }
-                  className="flex items-center gap-2 rounded-xl border border-[#E8912D]/20 bg-[#E8912D]/8 px-3 py-2 text-xs text-[#f6c978] hover:bg-[#E8912D]/15 hover:border-[#E8912D]/35 transition-all duration-200"
+                  className="flex items-center gap-2 rounded-xl border border-[#6366f1]/20 bg-[#6366f1]/8 px-3 py-2 text-xs text-indigo-300 hover:bg-[#6366f1]/15 hover:border-[#6366f1]/35 transition-all duration-200"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -274,7 +274,7 @@ export function StrategyMissingContextPanel({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ta réponse ici… (Entrée pour envoyer)"
-                className="w-full resize-none rounded-2xl rounded-br-md border border-[#E8912D]/20 bg-[#E8912D]/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:border-[#E8912D]/45 focus:bg-[#E8912D]/8 focus:shadow-[0_0_20px_rgba(232,145,45,0.06)]"
+                className="w-full resize-none rounded-2xl rounded-br-md border border-[#6366f1]/20 bg-[#6366f1]/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:border-[#6366f1]/45 focus:bg-[#6366f1]/8 focus:shadow-[0_0_20px_rgba(232,145,45,0.06)]"
               />
               <div className="flex items-center justify-between">
                 <button
@@ -285,7 +285,7 @@ export function StrategyMissingContextPanel({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#E8912D]/15 border border-[#E8912D]/25 px-5 py-2 text-xs font-medium text-[#E8912D] hover:bg-[#E8912D]/25 hover:border-[#E8912D]/40 transition-all duration-200"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#6366f1]/15 border border-[#6366f1]/25 px-5 py-2 text-xs font-medium text-indigo-400 hover:bg-[#6366f1]/25 hover:border-[#6366f1]/40 transition-all duration-200"
                 >
                   Suivant
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">

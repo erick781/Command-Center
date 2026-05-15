@@ -32,7 +32,7 @@ export function DeliverableViewer(props: DeliverableViewerProps) {
     <div className="overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#101015]">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E8912D]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">
             {eyebrow}
           </div>
           <div className="mt-2 text-lg font-semibold text-white">{title}</div>
@@ -54,7 +54,7 @@ export function DeliverableViewer(props: DeliverableViewerProps) {
           <div className="mx-auto max-w-3xl">
             <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-[#e6dccf] pb-5">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E8912D]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">
                   {eyebrow}
                 </div>
                 <div className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#111111]">

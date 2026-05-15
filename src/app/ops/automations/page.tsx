@@ -505,7 +505,7 @@ export default function AutomationsPage() {
         <section className="rounded-[28px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.02)_100%)] p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#E8912D]/20 bg-[#E8912D]/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f6c978]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#E8912D]/20 bg-[#E8912D]/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-300">
                 <Sparkles size={14} />
                 {labels.titleBadge}
               </div>
@@ -556,7 +556,7 @@ export default function AutomationsPage() {
                       <div className="text-[11px] uppercase tracking-[0.22em] text-white/35">
                         {item.label}
                       </div>
-                      <div className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#f6c978]">
+                      <div className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-indigo-300">
                         {item.value}
                       </div>
                     </CardContent>
@@ -588,7 +588,7 @@ export default function AutomationsPage() {
               <Card className="border-white/[0.06] bg-[#15151a]">
                 <CardContent className="pt-5">
                   <div className="flex items-center gap-2 text-white">
-                    <Bot className="h-4 w-4 text-[#E8912D]" />
+                    <Bot className="h-4 w-4 text-indigo-400" />
                     <h2 className="text-lg font-semibold">{labels.activeWorkflows}</h2>
                   </div>
 
@@ -696,7 +696,7 @@ export default function AutomationsPage() {
               <Card className="border-white/[0.06] bg-[#15151a]">
                 <CardContent className="pt-5">
                   <div className="flex items-center gap-2 text-white">
-                    <Activity className="h-4 w-4 text-[#E8912D]" />
+                    <Activity className="h-4 w-4 text-indigo-400" />
                     <h2 className="text-lg font-semibold">{labels.recentRuns}</h2>
                   </div>
 
@@ -742,7 +742,7 @@ export default function AutomationsPage() {
               <Card className="border-white/[0.06] bg-[#15151a]">
                 <CardContent className="pt-5">
                   <div className="flex items-center gap-2 text-white">
-                    <Workflow className="h-4 w-4 text-[#E8912D]" />
+                    <Workflow className="h-4 w-4 text-indigo-400" />
                     <h2 className="text-lg font-semibold">{labels.createTitle}</h2>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-white/45">{labels.createHelp}</p>
@@ -809,7 +809,7 @@ export default function AutomationsPage() {
                 <Card className="border-white/[0.06] bg-[#15151a]">
                   <CardContent className="pt-5">
                     <div className="flex items-center gap-2 text-white">
-                      <Workflow className="h-4 w-4 text-[#E8912D]" />
+                      <Workflow className="h-4 w-4 text-indigo-400" />
                       <h2 className="text-lg font-semibold">{labels.internalQueue}</h2>
                     </div>
                     <div className="mt-5 space-y-3">
@@ -882,7 +882,7 @@ export default function AutomationsPage() {
                 <Card className="border-white/[0.06] bg-[#15151a]">
                   <CardContent className="pt-5">
                     <div className="flex items-center gap-2 text-white">
-                      <TriangleAlert className="h-4 w-4 text-[#E8912D]" />
+                      <TriangleAlert className="h-4 w-4 text-indigo-400" />
                       <h2 className="text-lg font-semibold">{labels.demandSignals}</h2>
                     </div>
                     <div className="mt-5 space-y-3">

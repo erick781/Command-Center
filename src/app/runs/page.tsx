@@ -280,7 +280,7 @@ export default function RunsPage() {
         <section className="rounded-[32px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.26)] md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#E8912D]/20 bg-[#E8912D]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f6c978]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-[#E8912D]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-300">
                 <LibraryBig className="h-3.5 w-3.5" />
                 {copy.badge}
               </div>
@@ -354,7 +354,7 @@ export default function RunsPage() {
                 </div>
                 {stats.latestRun?.created_at ? (
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/48">
-                    <Clock3 className="h-3.5 w-3.5 text-[#f6c978]" />
+                    <Clock3 className="h-3.5 w-3.5 text-indigo-300" />
                     <span>
                       {copy.latest}: {new Date(stats.latestRun.created_at).toLocaleDateString(locale)}
                     </span>
@@ -426,7 +426,7 @@ export default function RunsPage() {
                   <div className="border-b border-white/[0.06] pb-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#E8912D]">
+                        <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-indigo-400">
                           <FileText className="h-3.5 w-3.5" />
                           {selectedRun.type || copy.typeFallback}
                         </div>
@@ -478,7 +478,7 @@ export default function RunsPage() {
                             className="rounded-2xl border border-white/[0.06] bg-black/20 p-4"
                           >
                             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/30">
-                              <Icon className="h-3.5 w-3.5 text-[#f6c978]" />
+                              <Icon className="h-3.5 w-3.5 text-indigo-300" />
                               {item.label}
                             </div>
                             <div className="mt-2 text-sm font-semibold text-white">{item.value}</div>

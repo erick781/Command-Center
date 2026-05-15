@@ -1,11 +1,1169 @@
 [
   {
-    "actualCostUsd": 0.00726,
+    "actualCostUsd": 0.00728,
     "category": "automation",
     "costSource": "exact",
     "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "implementationIdeas": [
+      "Embed visual workflow builder for client/task pipelines with AI agent nodes for question processing and output generation",
+      "Leverage 200+ connectors for better SaaS integrations and custom Java/JS components for context memory in long-running flows",
+      "Use event-driven triggers for ops automation (e.g., background jobs, request routing) with Docker self-hosting for secure boundaries"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-17T09:29:20Z",
+    "risks": [
+      "531 open issues suggest maintenance burden and potential stability gaps in production ops",
+      "Java monolith may complicate integration with lighter Node/Python services in Command Center stack",
+      "Active development (pushed today) risks breaking changes during adaptation"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source, low-code workflow automation platform with visual editor, 200+ connectors, AI components, and easy Docker deployment. It excels in API orchestration and event-driven flows but shows high open issues (531) indicating active but potentially unstable development. Java-based with strong adoption (744 stars) and Apache 2.0 license.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 302,
+      "totalTokens": 2284
+    },
+    "whyItMatters": "Directly addresses Command Center needs for client/task/question/output workflows via drag-and-drop editor and triggers; enables stronger connectors and context memory through custom/extendable components; improves ops automation and safer boundaries with self-hosted execution and API exposure.",
+    "createdAt": "2026-04-17T13:15:49.987Z",
+    "id": "1e55d508-cc56-4e9d-bddf-bba80ca656a2",
+    "updatedAt": "2026-04-17T13:15:49.987Z"
+  },
+  {
+    "actualCostUsd": 0.00654,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-17T13:15:45.915Z",
+    "error": "",
+    "fitScore": 6,
+    "fullName": "kac89/vulnrepo",
+    "id": "8d777b33-7bb2-4b08-a6ac-257afe48849c",
+    "implementationIdeas": [
+      "Adapt template engine and DOCX/HTML exporters for polished client deliverables from AI outputs.",
+      "Integrate scanner import logic (Nmap/Nessus) as connectors for vulnerability context in task workflows."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-16T20:51:28Z",
+    "risks": [
+      "Client-only architecture resists backend integration; optional server is personal-use only with manual cert setup.",
+      "Pentest-specific focus (CWE/CVE/templates) limits flexibility for general client/task/question workflows.",
+      "Angular dependency increases maintenance overhead for non-Angular Command Center."
+    ],
+    "score": 64.2,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a client-side Angular app for generating encrypted vulnerability reports with scanner imports, templates, and DOCX/HTML exports. It offers strong deliverable templating and offline encryption but lacks workflow automation or scalable backend integration. Repo shows adoption (551 stars) and recent activity, but it's narrowly focused on pentest reporting.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-17T13:15:45.915Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 283,
+      "totalTokens": 1535
+    },
+    "whyItMatters": "Could enhance Command Center's deliverable generation via export formats, templates, and scanner imports, aligning with client/output workflows. Client-side encryption enforces safe frontend boundaries, but TypeScript/Angular stack may conflict with existing architecture, and no native support for task/question flows or memory/context."
+  },
+  {
+    "actualCostUsd": 0.00723,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-16T13:15:45.733Z",
+    "error": "",
+    "fitScore": 85,
+    "fullName": "bytechefhq/bytechef",
+    "id": "a79dd208-7980-4f38-bac4-5705b63d4a0a",
+    "implementationIdeas": [
+      "Embed workflow editor for client task/question pipelines with AI nodes for output generation and exports.",
+      "Leverage 200+ connectors for internal ops flows (e.g., request routing, background jobs) and Git version control for deliverables."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-16T12:06:41Z",
+    "risks": [
+      "533 open issues may indicate bugs/unfinished features impacting reliability in production.",
+      "Java stack adds build complexity; high maintenance for custom forks/extensions."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, AI components, and 200+ connectors, forked from Piper. It supports self-hosting via Docker and excels at API orchestration and event-driven flows. High issue count (533) signals active development but potential stability concerns.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-16T13:15:45.733Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 244,
+      "totalTokens": 2226
+    },
+    "whyItMatters": "Directly addresses client/task/question/output workflows via drag-and-drop editor and AI agents; strengthens connectors and context memory with built-in components and code blocks. Enables scalable ops automation and safer boundaries by exposing workflows as APIs while keeping self-hosted control."
+  },
+  {
+    "actualCostUsd": 0.00733,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-15T13:15:45.737Z",
+    "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "id": "f689e643-66e5-4be2-9700-1eee06e686b3",
+    "implementationIdeas": [
+      "Embed visual workflow editor for client/task/question pipelines with AI components for context memory and output generation.",
+      "Leverage 200+ connectors for SaaS integrations and custom Java connectors for internal Command Center APIs, exposing flows as secure endpoints.",
+      "Use Docker Compose for quick ops automation (background jobs, request routing) with event triggers for real-time task orchestration."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-15T10:47:44Z",
+    "risks": [
+      "High open issues (532) signal potential instability and delayed fixes in Java monorepo.",
+      "Java stack may complicate integration with lighter Node/Go services; steep learning curve for non-dev teams despite low-code UI.",
+      "Forked from Piper with active development (pushed today) but NOASSERTION license conflicts README's Apache 2.0 claim."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosting via Docker. It excels in event-driven flows, custom code (Java/JS/Python/Ruby), and API exposure but shows high open issues (532) indicating maintenance challenges. Strong fit for Command Center's client/task automation needs with embeddable UI and scalability.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-15T13:15:45.737Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 353,
+      "totalTokens": 2335
+    },
+    "whyItMatters": "Aligns directly with client/task/question/output workflows via drag-drop editor and triggers; enhances deliverables through Git exports and API endpoints; bolsters connectors and context memory with built-in 200+ integrations and AI agents; streamlines ops flows with parallel/conditional logic while enforcing safer boundaries via self-hosted isolation."
+  },
+  {
+    "actualCostUsd": 0.00724,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-14T13:15:45.436Z",
+    "error": "",
+    "fitScore": 88,
+    "fullName": "bytechefhq/bytechef",
+    "id": "c7a911dc-bf3d-4be7-91d1-1a91db12881b",
+    "implementationIdeas": [
+      "Embed workflow editor for client/task flows with AI question processing and output exports to PDF/JSON",
+      "Orchestrate connectors for Partenaire services + context memory via Postgres integration",
+      "Route internal ops (background jobs, notifications) through event-driven triggers"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-14T11:56:33Z",
+    "risks": [
+      "531 open issues signal potential stability gaps in production use",
+      "Java monolith + high complexity may complicate quick adaptations vs lighter alternatives"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosted Docker setup. It excels at API orchestration and event-driven flows but shows high open issues (531) indicating active but unstable development. Strong fit for Command Center's client/task workflows and ops automation.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-14T13:15:45.436Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 257,
+      "totalTokens": 2239
+    },
+    "whyItMatters": "Directly addresses client/task/question/output pipelines via drag-and-drop workflows with built-in AI agents and connectors. Enables scalable background jobs, request routing, and exports without rebuilding core automation. Java-based with embeddable UI strengthens safer frontend/backend separation for internal ops."
+  },
+  {
+    "actualCostUsd": 0.00732,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-13T13:15:56.079Z",
+    "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "id": "ef911c9a-2861-4f04-9352-1acf9fd6ef93",
+    "implementationIdeas": [
+      "Embed workflow builder into Command Center UI for client-specific task/question/output flows with AI agent nodes for context memory.",
+      "Leverage 200+ connectors for request routing/exports; extend with custom Java connectors for Partenaire.io internal systems and deliverables generation.",
+      "Use event-driven triggers for background jobs/ops automation, integrating Git version control for workflow versioning and safer frontend/backend isolation."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-13T11:45:39Z",
+    "risks": [
+      "High open issues (541) signal instability; requires audit of critical paths before production use.",
+      "Java stack may complicate integration with non-Java Command Center components; heavy self-hosting overhead vs lighter alternatives.",
+      "Fork from Piper with recent activity (pushed today) but NOASSERTION license mismatch with README claims needs verification."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source Java-based low-code workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosting via Docker. It excels in API orchestration and event-driven flows but shows high open issues (541) indicating potential maintenance challenges. Strong fit for Command Center's client/task automation needs with embedding potential.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-13T13:15:56.079Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 338,
+      "totalTokens": 2320
+    },
+    "whyItMatters": "Addresses core priorities: client/task/question/output workflows via drag-drop editor and triggers; stronger connectors/context memory with 200+ integrations and custom code (JS/Python/Java/Ruby); better ops/automation flows with event-driven/scheduled execution; safer boundaries via self-hosted API exposure and role-based controls."
+  },
+  {
+    "actualCostUsd": 0.00658,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-13T13:15:50.139Z",
+    "error": "",
+    "fitScore": 65,
+    "fullName": "kac89/vulnrepo",
+    "id": "a161379f-4923-4740-a608-987891313a85",
+    "implementationIdeas": [
+      "Extract export/templating engine for Command Center deliverables, adapting DOCX/HTML generation with our branding and dynamic client/task data.",
+      "Integrate scanner import logic as optional connectors for security audits, mapping to our question/output schema.",
+      "Adopt E2E encryption patterns for frontend report previews to enhance data isolation in workflows."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-10T17:07:29Z",
+    "risks": [
+      "Pentest-specific UX/templates require heavy customization to fit general client/task flows, risking scope creep.",
+      "Pure client-side storage lacks scalable persistence or multi-user collaboration needed for ops/automation.",
+      "Angular/TypeScript dependency may conflict with existing stack; separate vulnrepo-server is personal-use only, not production-ready."
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a client-side Angular app for generating vulnerability reports with E2E encryption, scanner imports (Nmap/Nessus/Burp), templates (CWE/CVE), and exports (TXT/HTML/DOCX/Jira). It offers strong deliverable templating and formatting but is pentest-specific with limited persistence or workflow integration. Apache-2.0 licensed, Docker-ready, active with 551 stars.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-13T13:15:50.139Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 333,
+      "totalTokens": 1585
+    },
+    "whyItMatters": "Improves client-facing deliverables via polished DOCX/HTML exports and customizable templates, aligning with output workflow needs. Encryption model enforces safer frontend boundaries with no backend data leakage. Scanner imports could inspire connectors, but pentest focus limits direct task/question applicability."
+  },
+  {
+    "actualCostUsd": 0.00731,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-10T13:15:53.250Z",
+    "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "id": "0f58c700-1402-4d13-8593-38a4e53f0e45",
+    "implementationIdeas": [
+      "Embed workflow builder for client/task/question pipelines with AI components for output generation and exports.",
+      "Leverage 200+ connectors for stronger SaaS integrations and context memory via PostgreSQL persistence.",
+      "Use event-driven triggers for ops automation (background jobs, request routing) with Git version control for deliverables."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-10T12:00:59Z",
+    "risks": [
+      "High open issues (532) signal maintenance burden and potential instability for production Command Center use.",
+      "Java backend may complicate integration with existing stack, requiring custom forks or heavy customization.",
+      "No recent release (n/a) despite daily pushes suggests unstable versioning for enterprise reliability."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with 742 stars, AI agent support, 200+ connectors, and easy Docker deployment. It excels in API orchestration and embeddable integrations but shows high open issues (532) and Java complexity. Strong fit for Command Center's client/task workflows and ops automation, though adaptation requires significant engineering.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-10T13:15:53.250Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 326,
+      "totalTokens": 2308
+    },
+    "whyItMatters": "Addresses core needs like client/task/question/output workflows via visual editor and event-driven triggers; strengthens connectors and context memory with 200+ built-in integrations and custom code support (JS/Python/Ruby); enables scalable ops flows and safer boundaries through self-hosted execution and API exposure. Recent activity (pushed today) indicates viability over n8n-like alternatives."
+  },
+  {
+    "actualCostUsd": 0.00659,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-10T13:15:46.982Z",
+    "error": "",
+    "fitScore": 6,
+    "fullName": "kac89/vulnrepo",
+    "id": "64f4d981-5080-4ffc-ac27-04f8ea9d0b64",
+    "implementationIdeas": [
+      "Adapt report templating/export engine (DOCX/HTML/changelog) for standardized client output workflows, integrating with existing task/question data.",
+      "Fork scanner importers (Nessus/Burp/Trivy) as connectors for external tool data ingestion, adding LLM polishing for outputs.",
+      "Integrate E2E encryption and local storage patterns to secure frontend task state without backend dependency."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-09T21:08:28Z",
+    "risks": [
+      "Security/pentest niche may introduce irrelevant complexity (e.g., MITRE ATT&CK templates) bloating general ops automation.",
+      "Pure frontend Angular stack conflicts with scalable backend needs; optional Go server is personal-use only, unproven for production.",
+      "Open issues like install failures signal potential maintenance/reliability gaps for internal adaptation."
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a TypeScript Angular app for generating encrypted vulnerability reports with scanner imports, templates, and exports to DOCX/HTML/Jira. It excels in pentest deliverable templating and offline security but targets security auditing, not general client/task workflows. Recent activity and 551 stars indicate adoption, but lacks backend by default.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-10T13:15:46.982Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 340,
+      "totalTokens": 1592
+    },
+    "whyItMatters": "Could enhance Command Center's deliverable generation via proven export/templating features and scanner integrations, aligning with better deliverables/exports priority. E2E encryption supports safer frontend boundaries; API enables custom backend storage for context memory. However, security-specific focus limits fit for broader task/question flows."
+  },
+  {
+    "actualCostUsd": 0.0073,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-09T13:15:51.783Z",
+    "error": "",
+    "fitScore": 85,
+    "fullName": "bytechefhq/bytechef",
+    "id": "138ab148-4f06-4d29-8f51-ab29a8de292e",
+    "implementationIdeas": [
+      "Embed workflow builder for client/task/question pipelines with custom AI connectors for Partenaire outputs and exports",
+      "Adapt for background jobs and request routing using PostgreSQL persistence and event triggers to handle ops flows scalably",
+      "Leverage 200+ built-in components plus custom Java/JS extensions for stronger SaaS integrations and context memory"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-09T10:23:07Z",
+    "risks": [
+      "533 open issues signal potential instability and high ongoing maintenance for production use",
+      "Java/Gradle stack mismatches lighter Node/Go preferences, increasing build/deploy complexity",
+      "Fork of Piper may carry legacy tech debt; license NOASSERTION in metadata conflicts with Apache 2.0 in README"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with 741 stars, 200+ connectors, AI components, and easy Docker deployment. It excels at API orchestration and embedded integrations but shows high maintenance burden with 533 open issues. Strong fit for Command Center's client/task workflows and ops automation, though Java stack adds complexity.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-09T13:15:51.783Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 314,
+      "totalTokens": 2296
+    },
+    "whyItMatters": "Enables scalable client/task/question/output pipelines via visual editor and event-driven flows; strengthens connectors and context memory with built-in 200+ integrations and AI agents; improves ops automation and safer boundaries through self-hosted execution, API exposure, and version control integration."
+  },
+  {
+    "actualCostUsd": 0.00654,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-09T13:15:46.953Z",
+    "error": "",
+    "fitScore": 6,
+    "fullName": "kac89/vulnrepo",
+    "id": "aa9b0d41-8c6e-471a-bd91-715027836797",
+    "implementationIdeas": [
+      "Extract report templating/export engine for polished DOCX/HTML deliverables with custom Partenaire.io branding and dynamic data injection.",
+      "Adapt scanner import logic as connectors for external tool outputs, feeding into task/question workflows."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-08T21:35:56Z",
+    "risks": [
+      "Angular monolith hard to integrate into existing Command Center stack; high rewrite effort.",
+      "Pentest-specific focus (CWE/CVE templates) limits flexibility for general client deliverables; scope creep risk.",
+      "Optional Go server is personal-use only, unreliable for production ops/automation."
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a TypeScript/Angular frontend app for generating encrypted vulnerability reports with scanner imports, templates, and exports to DOCX/HTML/Jira. It excels in pentest deliverable templating and formatting but targets security auditing, not general client/task workflows. Recent activity and 551 stars indicate traction, but Angular stack may clash with Command Center architecture.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-09T13:15:46.953Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 292,
+      "totalTokens": 1544
+    },
+    "whyItMatters": "Strong templating, export polish (DOCX/HTML with attachments/checksums), and scanner integrations could enhance deliverable generation. E2E encryption enforces safer frontend boundaries for sensitive outputs. Lacks workflow/automation depth for client/task/question flows or scalable backend connectors."
+  },
+  {
+    "actualCostUsd": 0.00727,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-08T13:15:46.135Z",
+    "error": "",
     "fitScore": 82,
     "fullName": "bytechefhq/bytechef",
+    "id": "a4692b1d-44eb-4f4f-b002-f405854a5c45",
+    "implementationIdeas": [
+      "Embed workflow builder for client/task orchestration with AI agent nodes for question processing and output exports",
+      "Use 200+ connectors for SaaS integrations and custom Java/JS components for Partenaire-specific memory/context handling",
+      "Deploy via Docker for background jobs and request routing, isolating frontend triggers from backend execution"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-08T12:07:29Z",
+    "risks": [
+      "548 open issues signal potential instability and high maintenance burden in production",
+      "Java stack may conflict with lighter Node/Go preferences; NOASSERTION license needs license file verification",
+      "Full platform scope risks over-engineering simple Command Center automations"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source Java-based low-code workflow automation platform with visual editor, 200+ connectors, AI components, and easy Docker deployment. It excels at API orchestration and event-driven flows but carries high maintenance risk from 548 open issues. Strong fit for Command Center's automation needs but overkill for simple internal use.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-08T13:15:46.135Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 287,
+      "totalTokens": 2269
+    },
+    "whyItMatters": "Aligns directly with client/task/question/output workflows via drag-and-drop editor and triggers; strengthens connectors and context memory through built-in AI/state management; enables scalable ops flows and safer boundaries by exposing workflows as APIs with self-hosted control."
+  },
+  {
+    "actualCostUsd": 0.00727,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-07T13:15:46.429Z",
+    "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "id": "7bd575e0-ff05-41ef-bf4a-c9848d9744fe",
+    "implementationIdeas": [
+      "Adapt visual editor for client/task/question pipelines with custom AI agent connectors for context memory and output exports",
+      "Embed workflow engine for background jobs and request routing, integrating with existing stack via Java APIs and Docker deployment",
+      "Leverage built-in AI components and code steps (JS/Python) for smarter deliverables generation and ops flows"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-07T12:10:00Z",
+    "risks": [
+      "High open issues (541) signal potential instability and maintenance burden for Java monorepo",
+      "Dependency on PostgreSQL and complex Docker setup may complicate scaling in Command Center environment"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ integrations, AI components, and self-hosting via Docker. It aligns well with Command Center needs for client/task workflows, connectors, and ops automation but carries Java maintenance overhead. High adoption (741 stars) and recent activity indicate viability.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-07T13:15:46.429Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 288,
+      "totalTokens": 2270
+    },
+    "whyItMatters": "Provides ready-made visual workflow builder for client/task/question/output orchestration, stronger connectors via 200+ built-ins plus custom extensibility, and event-driven flows for ops automation. Embedded iPaaS mode enables safe frontend/backend boundaries by exposing workflows as APIs without vendor lock-in."
+  },
+  {
+    "actualCostUsd": 0.00742,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-06T13:15:56.710Z",
+    "error": "",
+    "fitScore": 78,
+    "fullName": "bytechefhq/bytechef",
+    "id": "42f2a086-49fb-4f42-8389-3ef9d33bd4c7",
+    "implementationIdeas": [
+      "Embed ByteChef workflow builder into Command Center UI for client task definition and orchestration",
+      "Use 200+ connectors to standardize integrations with external systems, reducing custom adapter development",
+      "Build custom connectors for internal APIs (delivery tracking, billing, document generation) in Java/JavaScript",
+      "Leverage event-driven workflows for real-time task status updates and cascading automations",
+      "Expose workflows as APIs to backend services for programmatic task execution and result collection",
+      "Version control workflows in Git from ByteChef UI for audit trail and collaborative iteration"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-04T05:47:31Z",
+    "risks": [
+      "537 open issues suggest active development with potential instability; requires testing against production workloads before adoption",
+      "Java-based backend adds operational overhead (JVM tuning, memory management) vs. lighter runtime solutions",
+      "Documentation and community maturity unclear relative to established competitors (n8n); limited case studies for embedded SaaS scenarios",
+      "License shows NOASSERTION in GitHub metadata despite README stating Apache 2.0; verify licensing compliance before embedding",
+      "Custom connector development requires Java/JavaScript skill—ensure team capacity exists or plan abstraction layer"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature, Apache-licensed open-source workflow automation platform with 741 stars, 200+ built-in connectors, visual editor, and AI components. Recently active (pushed 2 days ago) and designed for both standalone and embedded use cases across SaaS and internal systems.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-06T13:15:56.710Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 442,
+      "totalTokens": 2424
+    },
+    "whyItMatters": "Directly addresses internal Command Center needs for orchestrating client/task workflows, routing requests between systems, and automating ops flows. Visual editor + extendable connector architecture enables rapid integration without vendor lock-in. Self-hosted deployment maintains data sovereignty and operational control."
+  },
+  {
+    "actualCostUsd": 0.00667,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-06T13:15:48.820Z",
+    "error": "",
+    "fitScore": 68,
+    "fullName": "kac89/vulnrepo",
+    "id": "ebef970a-6720-4068-91e6-48003303a09e",
+    "implementationIdeas": [
+      "Adapt report templating engine for client-facing output generation in command center task workflows",
+      "Integrate multi-format export (DOCX, HTML, PDF) into deliverables pipeline to reduce manual document handling",
+      "Leverage optional Go backend pattern to build lightweight connector for internal vulnerability context memory",
+      "Reuse scanner import logic (Nmap, Nessus, Trivy parsers) for automated question-to-output data enrichment"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-05T19:26:22Z",
+    "risks": [
+      "Early-stage adoption risk: no formal releases yet; latest push only 1 day old indicates active development churn",
+      "TypeScript/Angular stack requires frontend engineering; optional Go backend is example-only and marked 'personal use'",
+      "Two open issues on GitHub; limited issue resolution history suggests small maintainer capacity",
+      "E2E encryption adds complexity to backend integration; self-hosted model may conflict with Partenaire's scalability needs"
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a mature, actively maintained vulnerability reporting tool (551 stars, 117 forks) with strong export capabilities (DOCX, HTML, PDF, JSON), end-to-end encryption, and scanner integrations. The Angular-based frontend with optional Go backend could enhance Partenaire's deliverable generation and client output workflows.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-06T13:15:48.820Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 419,
+      "totalTokens": 1671
+    },
+    "whyItMatters": "Direct alignment with 'deliverables' heuristic category. The templating system, multi-format exports, and scanner ingestion (Nessus, Burp, OpenVAS) reduce boilerplate work. End-to-end encryption and optional self-hosted backend (vulnrepo-server) provide security isolation for sensitive client data. Apache 2.0 license allows commercial adaptation."
+  },
+  {
+    "actualCostUsd": 0.00732,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-03T13:15:52.156Z",
+    "error": "",
+    "fitScore": 87,
+    "fullName": "bytechefhq/bytechef",
+    "id": "407c0715-5f58-44c7-9dfc-8c436e0b87ec",
+    "implementationIdeas": [
+      "Embed workflow editor for client/task/question pipelines, routing outputs to exports/deliverables with custom Java/JS connectors for Partenaire services.",
+      "Leverage AI components and 200+ built-ins for context memory/persistence across jobs, adding Postgres-backed state for long-running Command Center flows.",
+      "Use as backend orchestrator for ops automation (background jobs, request routing), exposing safe API endpoints to frontend while self-hosting for data control."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-03T12:04:13Z",
+    "risks": [
+      "550 open issues signal high maintenance burden and potential instability despite recent activity.",
+      "Java/Spring stack requires team expertise and may complicate integration with non-Java Command Center components.",
+      "No recent release (n/a) despite daily pushes indicates possible unstable development process."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source Java-based low-code workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosting via Docker. It excels at API orchestration and event-driven flows but shows high maintenance needs with 550 open issues. Strong fit for Command Center's client/task automation and connector needs, though Java stack adds integration overhead.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-03T13:15:52.156Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 341,
+      "totalTokens": 2323
+    },
+    "whyItMatters": "Addresses core priorities like client/task/question/output workflows via drag-and-drop editor and controls (conditionals, loops, parallel); enables stronger connectors and context memory through extendable components and built-in AI; improves ops flows with event-driven/scheduled execution and Git version control; supports safer boundaries by exposing workflows as APIs with auth handling."
+  },
+  {
+    "actualCostUsd": 0.00653,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-03T13:15:46.424Z",
+    "error": "",
+    "fitScore": 82,
+    "fullName": "kac89/vulnrepo",
+    "id": "3b3798ae-ae2f-4116-8df6-a36f63564dc2",
+    "implementationIdeas": [
+      "Fork and integrate report templating/export logic (DOCX/HTML) into Command Center's output pipeline for polished client deliverables.",
+      "Adapt scanner importers (Nmap/Nessus) as connectors for enriching task context/memory from security scans.",
+      "Embed E2E encryption patterns for safer frontend data handling in workflows."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "apply_candidate",
+    "repoPushedAt": "2026-04-03T13:12:54Z",
+    "risks": [
+      "Pentest-specific UX/templates may require heavy customization for general Command Center use cases.",
+      "Angular monolith less flexible than micro-frontends; potential maintenance overhead for TypeScript deps."
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a TypeScript Angular app for generating encrypted vulnerability reports with scanner imports, templates, and exports like DOCX/Jira. It excels in pentest deliverable templating and offline E2E encryption but is purely frontend-focused. High adoption (551 stars) with recent activity, under Apache-2.0.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-03T13:15:46.424Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 276,
+      "totalTokens": 1528
+    },
+    "whyItMatters": "Directly improves Command Center's deliverable generation via proven export/templating features and scanner integrations, aligning with client/output workflows. E2E encryption strengthens frontend safety boundaries; API enables scalable backend connectors for task memory."
+  },
+  {
+    "actualCostUsd": 0.00726,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-02T13:15:52.927Z",
+    "error": "",
+    "fitScore": 82,
+    "fullName": "bytechefhq/bytechef",
+    "id": "7872f286-1df2-44d6-a577-ed516e91536f",
+    "implementationIdeas": [
+      "Embed workflow editor for client/task/question pipelines with AI nodes for output generation and custom Java/JS connectors for Partenaire.io services.",
+      "Use event-driven triggers for ops flows (e.g., question routing, export automation) and Docker setup for quick internal deployment with Postgres persistence."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-02T12:09:20Z",
+    "risks": [
+      "High open issues (557) signal maintenance burden and potential instability for production Command Center use.",
+      "Java stack increases adaptation complexity vs. lighter JS alternatives; NOASSERTION license needs legal review despite Apache v2.0 badges."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ connectors, AI components, and easy Docker self-hosting. It excels at API orchestration and event-driven flows but shows high open issues (557) and Java complexity. Strong fit for Command Center's client/task workflows and ops automation, though adaptation effort is significant.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-02T13:15:52.927Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 282,
+      "totalTokens": 2264
+    },
+    "whyItMatters": "Addresses core needs like client/task/question/output orchestration via drag-drop workflows, stronger connectors for SaaS integrations, and context memory in AI agents. Enables scalable background jobs and safer backend boundaries by exposing workflows as APIs while keeping self-hosted control."
+  },
+  {
+    "actualCostUsd": 0.00656,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-02T13:15:47.558Z",
+    "error": "",
+    "fitScore": 72,
+    "fullName": "kac89/vulnrepo",
+    "id": "eabc634e-4364-46e4-abbd-17262fd338d9",
+    "implementationIdeas": [
+      "Extract report templating engine and DOCX/PDF exporters for Command Center deliverables, integrating with existing task/question flows.",
+      "Adapt scanner import logic (Burp/Nessus) as connectors for vulnerability context memory, adding E2E encryption to frontend outputs.",
+      "Fork Angular components for customizable report UI, deploying via Docker for internal ops automation."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-01T19:25:14Z",
+    "risks": [
+      "Pure frontend focus requires custom backend integration for persistence, risking data loss without vulnrepo-server adaptation.",
+      "Angular dependency and reported install issues (#1) could complicate maintenance in TypeScript monorepo.",
+      "Pentest-specific features may overfit vs. general client workflows, needing heavy customization."
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a TypeScript Angular app for generating encrypted vulnerability reports with scanner imports, templates, and DOCX/HTML exports. It offers strong deliverable templating and frontend-only security but lacks persistence or workflow integration. Recent activity and 551 stars indicate maturity, though install issues persist.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-02T13:15:47.558Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 310,
+      "totalTokens": 1562
+    },
+    "whyItMatters": "Enhances deliverable generation via templates, scanner imports (Nmap/Nessus), and multi-format exports, aligning with client/task/output workflows. E2E encryption enforces safer frontend boundaries; optional Go API server enables backend persistence for context memory. Docker support aids scalable ops/automation."
+  },
+  {
+    "actualCostUsd": 0.00746,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-04-01T13:15:57.780Z",
+    "error": "",
+    "fitScore": 72,
+    "fullName": "bytechefhq/bytechef",
+    "id": "6c11cdad-c62b-480a-bc79-cd8a40841658",
+    "implementationIdeas": [
+      "Embed ByteChef as workflow engine for client intake → task creation → deliverable export pipelines",
+      "Build custom connectors for Partenaire data sources (CRM, project mgmt, document storage) to strengthen context memory",
+      "Use event-driven workflows to automate QA gates, approval routing, and status notifications in command center ops",
+      "Expose workflow APIs for programmatic task orchestration and integrate with existing frontend question/output interfaces",
+      "Leverage built-in code editor (Java, JavaScript, Python) for complex business logic without forking codebase"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-01T13:07:40Z",
+    "risks": [
+      "559 open issues suggest active maintenance burden; assess prioritization and response SLAs before adoption",
+      "No released version (n/a) indicates early-stage stability; production readiness requires thorough testing and potential custom patches",
+      "NOASSERTION license tag is unusual; verify actual Apache 2.0 compliance and legal review for commercial use",
+      "Scaling to multi-tenant SaaS scenarios may require architectural extensions beyond current documented embedded solution patterns",
+      "Learning curve for team unfamiliar with workflow orchestration platforms; requires training and operational runbooks"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature, Apache 2.0 licensed open-source workflow automation platform built on Spring Boot with 742 stars, 200+ connectors, and AI-ready components. It supports visual workflow design, event-driven triggers, custom connector development, and self-hosted deployment—directly applicable to command center task orchestration and client delivery pipelines.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-04-01T13:15:57.780Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 477,
+      "totalTokens": 2459
+    },
+    "whyItMatters": "ByteChef addresses core command center needs: (1) low-code workflow composition for client/task/output flows without vendor lock-in, (2) extensible connector architecture for context memory and integration, (3) self-hosted control over execution and data security, (4) API exposure of workflows for programmatic ops automation. The Java/Spring Boot stack aligns with enterprise infrastructure patterns."
+  },
+  {
+    "actualCostUsd": 0.00651,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-04-01T13:15:46.212Z",
+    "error": "",
+    "fitScore": 65,
+    "fullName": "kac89/vulnrepo",
+    "id": "a251b126-fc3a-4ff2-bdc0-0af361be10f5",
+    "implementationIdeas": [
+      "Extract DOCX/HTML templating and scanner import logic for Command Center deliverable generation",
+      "Adapt frontend encryption/share patterns for safer output exports in client workflows"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-04-01T13:11:01Z",
+    "risks": [
+      "Pure frontend limits scalability; optional server is personal-use only with manual cert setup[1]",
+      "Pentest-specific (CWE/CVE imports) may require heavy refactoring for general task/question use; install issues reported[9]"
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "VULNRΞPO is a TypeScript Angular app for generating vulnerability reports with E2E encryption, scanner imports (Nmap/Nessus/Burp), DOCX/HTML exports, and templates. It excels at pentest deliverables but is purely frontend with optional personal-use Go server. High adoption (551 stars) but limited scalability for enterprise Command Center workflows.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-04-01T13:15:46.212Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 262,
+      "totalTokens": 1514
+    },
+    "whyItMatters": "Strong fit for improving client/task/output workflows via templating and exports; could enhance deliverables polish. Lacks native connectors/memory for our task/question flows and has weak backend (sample server only), misaligning with scalable ops/automation needs."
+  },
+  {
+    "actualCostUsd": 0.00744,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-03-31T13:16:14.986Z",
+    "error": "",
+    "fitScore": 68,
+    "fullName": "bytechefhq/bytechef",
+    "id": "fb02d733-ea4c-4a5b-8199-64ee2cac8a8f",
+    "implementationIdeas": [
+      "Embed ByteChef's workflow builder into Command Center UI to let users visually compose client→task→question→output pipelines without code",
+      "Use ByteChef connectors for context-aware data fetching and delivery system integration (CRM, docs, chat APIs)",
+      "Replace custom background job logic with ByteChef's event-driven execution to handle async deliverable generation and exports",
+      "Build custom Java/JS connectors for Partenaire.io-specific APIs to tighten task context memory and feedback loops"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-03-31T12:55:16Z",
+    "risks": [
+      "555 open issues and no tagged release suggest ongoing stability concerns; requires thorough integration testing before prod deployment",
+      "Java/Spring backend adds operational complexity if team lacks JVM expertise; Docker Compose setup mitigates but increases infrastructure footprint",
+      "Learning curve for teams unfamiliar with workflow DAGs; visual editor may not suffice for complex conditional logic without code blocks",
+      "Dependency on PostgreSQL, RabbitMQ, Redis increases deployment surface; needs hardening for multi-tenant or high-concurrency scenarios"
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature, actively-maintained open-source workflow automation platform with 742 stars, 200+ pre-built connectors, and visual workflow composition. It supports event-driven/scheduled execution, multi-language extensibility (Java, JS, Python, Ruby), and embedded deployment models—making it suitable for orchestrating internal ops and connector logic.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-03-31T13:16:14.986Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 460,
+      "totalTokens": 2442
+    },
+    "whyItMatters": "Reduces time-to-deployment for background job orchestration and request routing by providing battle-tested primitives (triggers, conditionals, loops, parallel execution, code blocks). Native AI component support and Git-friendly workflow versioning align with modern ops infrastructure. Self-hosted Apache v2.0 license ensures data residency and avoids vendor lock-in."
+  },
+  {
+    "actualCostUsd": 0.00672,
+    "category": "deliverables",
+    "costSource": "exact",
+    "createdAt": "2026-03-31T13:16:04.424Z",
+    "error": "",
+    "fitScore": 72,
+    "fullName": "kac89/vulnrepo",
+    "id": "dee9c049-dab5-41f2-85cb-53d2740bea87",
+    "implementationIdeas": [
+      "Integrate vulnrepo's template engine and DOCX exporter to standardize Command Center deliverable formatting and branding",
+      "Adopt scanner integration patterns (Nmap/Burp/Nessus parsers) to normalize heterogeneous security tool outputs into unified JSON schema",
+      "Leverage local AES encryption model for client-side sensitive data handling in task/question contexts without backend exposure",
+      "Repurpose changelog/versioning logic to track question/output iterations and audit trails within Command Center workflows"
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use to improve deliverable generation, exports, templating, or document polish.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-03-30T14:46:43Z",
+    "risks": [
+      "Angular 2+ dependency footprint may conflict with existing Command Center tech stack; requires architecture compatibility audit",
+      "No released versions (n/a tag) and small core team (kac89) signals maintenance risk for critical bug fixes or security patches",
+      "Local-only encryption model may not scale for multi-tenant or federated Command Center deployments requiring centralized policy/audit",
+      "Feature creep: vulnerability-specific domain (CVE/CWE/MITRE templates) may require significant product refactoring to generalize for arbitrary deliverable types"
+    ],
+    "score": 64.1,
+    "source": "auto",
+    "status": "completed",
+    "summary": "vulnrepo is a mature, actively-maintained TypeScript/Angular vulnerability reporting tool with 550 stars and strong feature coverage for template-driven report generation, multi-format exports (DOCX/HTML/PDF/JSON), and scanner integrations. It offers end-to-end encryption and local-only processing, making it production-ready for security workflows.",
+    "title": "vulnrepo",
+    "topics": [
+      "asvs",
+      "bugbounty",
+      "burpsuite",
+      "end-to-end-encryption",
+      "hacking",
+      "nessus",
+      "ollama",
+      "openvas"
+    ],
+    "updatedAt": "2026-03-31T13:16:04.424Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1252,
+      "outputTokens": 466,
+      "totalTokens": 1718
+    },
+    "whyItMatters": "Direct alignment with deliverables/exports improvement: native DOCX/HTML/PDF generation, customizable templates, and structured vulnerability data handling could accelerate Command Center's output pipeline. The Apache 2.0 licensed codebase is architecturally clean (pure frontend, no backend lock-in) and demonstrates real adoption (14 watchers, 117 forks, recent activity)."
+  },
+  {
+    "actualCostUsd": 0.0073,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-03-30T13:15:47.520Z",
+    "error": "",
+    "fitScore": 82,
+    "fullName": "bytechefhq/bytechef",
+    "id": "31522e45-c9dc-48c2-9e4f-b3bdcf084ecf",
+    "implementationIdeas": [
+      "Adapt visual workflow editor for client/task pipelines with custom AI agent connectors for question/output processing.",
+      "Embed as connector orchestrator for background jobs and SaaS integrations, exporting deliverables via Git/version control.",
+      "Leverage event-driven triggers and code steps (JS/Python) for ops flows with context memory via Redis."
+    ],
+    "modelId": "perplexity/sonar",
+    "possibleUse": "Use for background jobs, request routing, connector orchestration, or internal ops flows.",
+    "provider": "openrouter",
+    "recommendation": "backlog",
+    "repoPushedAt": "2026-03-30T13:15:25Z",
+    "risks": [
+      "High open issues (564) signal maintenance burden and potential instability for production Command Center use.",
+      "Java/Spring backend lacks simplicity; complex local dev setup (multiple services) hinders quick iteration.",
+      "Fork of Piper with NOASSERTION license mismatch (README claims Apache 2.0) raises legal/compliance risks."
+    ],
+    "score": 58.3,
+    "source": "auto",
+    "status": "completed",
+    "summary": "ByteChef is a mature open-source low-code workflow automation platform with visual editor, 200+ connectors, AI components, and self-hosted Docker setup. It excels in API orchestration and event-driven flows but shows high open issues (564) and Java backend complexity. Strong adoption (741 stars) but maintenance concerns evident.",
+    "title": "bytechef",
+    "topics": [
+      "ai",
+      "ai-agents",
+      "api",
+      "automation",
+      "embedded-ipaas",
+      "hacktoberfest",
+      "integrations",
+      "ipaas"
+    ],
+    "updatedAt": "2026-03-30T13:15:47.520Z",
+    "usage": {
+      "cachedTokens": 0,
+      "inputTokens": 1982,
+      "outputTokens": 313,
+      "totalTokens": 2295
+    },
+    "whyItMatters": "Aligns with Command Center needs for client/task/question/output workflows, connector orchestration, and ops automation. Visual builder could simplify internal flows and exports; embedded iPaaS fits safer frontend/backend boundaries with API exposure. Scales via Docker/Postgres/RabbitMQ stack."
+  },
+  {
+    "actualCostUsd": 0.00726,
+    "category": "automation",
+    "costSource": "exact",
+    "createdAt": "2026-03-27T13:15:50.032Z",
+    "error": "",
+    "fitScore": 82,
+    "fullName": "bytechefhq/bytechef",
+    "id": "a424f981-b17b-4aed-8231-ea52a27d4979",
     "implementationIdeas": [
       "Map client intake → task routing → AI processing → output export workflows using built-in triggers and 200+ connectors for seamless SaaS integrations.",
       "Embed workflow builder in Command Center UI for user-defined automations, leveraging AI components for question/context memory and Git version control for deliverables."
@@ -34,16 +1192,14 @@
       "integrations",
       "ipaas"
     ],
+    "updatedAt": "2026-03-27T13:15:50.032Z",
     "usage": {
       "cachedTokens": 0,
       "inputTokens": 1981,
       "outputTokens": 280,
       "totalTokens": 2261
     },
-    "whyItMatters": "Aligns directly with Command Center needs for client/task/question/output workflows, connector orchestration, and ops automation. Java backend with React UI provides scalable self-hosted option; embedded iPaaS fits safer frontend/backend boundaries and context memory via workflows.",
-    "createdAt": "2026-03-27T13:15:50.032Z",
-    "id": "a424f981-b17b-4aed-8231-ea52a27d4979",
-    "updatedAt": "2026-03-27T13:15:50.032Z"
+    "whyItMatters": "Aligns directly with Command Center needs for client/task/question/output workflows, connector orchestration, and ops automation. Java backend with React UI provides scalable self-hosted option; embedded iPaaS fits safer frontend/backend boundaries and context memory via workflows."
   },
   {
     "actualCostUsd": 0.0004,

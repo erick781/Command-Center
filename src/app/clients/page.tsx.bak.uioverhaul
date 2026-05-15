@@ -45,7 +45,6 @@ import {
   downloadDeliverableDocx,
   downloadDeliverableMarkdown,
 } from "@/lib/deliverable-download";
-import { mdToHtml } from "@/lib/render-deliverable";
 
 type StrategyRecord = {
   created_at?: string;
@@ -104,7 +103,7 @@ type Client = {
 };
 
 type ViewMode = "list" | "detail" | "strategy";
-type DetailSection = "overview" | "sources" | "memory" | "history" | "intelligence";
+type DetailSection = "overview" | "sources" | "memory" | "history";
 type ClientListFilter =
   | "all"
   | "active"
@@ -167,7 +166,6 @@ const detailSections: Array<{ key: DetailSection; short: string }> = [
   { key: "sources", short: "Sources" },
   { key: "memory", short: "Mémoire" },
   { key: "history", short: "Historique" },
-  { key: "intelligence", short: "🧠 Intel" },
 ];
 
 const contextBaseFields: Array<{
@@ -586,8 +584,8 @@ function readinessTone(score: number) {
 
   if (score >= 45) {
     return {
-      bar: "bg-indigo-400",
-      badge: "bg-indigo-500/12 text-indigo-300",
+      bar: "bg-[#E8912D]",
+      badge: "bg-[#E8912D]/12 text-[#f6c978]",
       label: "Bonne base",
     };
   }
@@ -597,39 +595,6 @@ function readinessTone(score: number) {
     badge: "bg-white/[0.06] text-white/55",
     label: "Contexte mince",
   };
-}
-
-function StatusDot({ client }: { client: Client }) {
-  if (client.visibility === "admin") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/35">
-        <span className="status-dot status-dot-hidden" />
-        Caché
-      </span>
-    );
-  }
-  if (client.status === "churned") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/8 px-2.5 py-1 text-[11px] font-medium text-red-300">
-        <span className="status-dot status-dot-churned" />
-        Churné
-      </span>
-    );
-  }
-  if (client.status === "paused") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/8 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-        <span className="status-dot status-dot-paused" />
-        En pause
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-      <span className="status-dot status-dot-active" />
-      Actif
-    </span>
-  );
 }
 
 function SourceStatusCard(props: ContextSourceCard) {
@@ -675,7 +640,7 @@ function SourceStatusCard(props: ContextSourceCard) {
       ) : null}
       <p className="mt-1 text-xs leading-5 text-white/35">{description}</p>
       {setupHint ? (
-        <p className="mt-2 text-[11px] leading-5 text-indigo-300">{setupHint}</p>
+        <p className="mt-2 text-[11px] leading-5 text-[#f6c978]">{setupHint}</p>
       ) : null}
       {value ? (
         <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-white/55">
@@ -688,7 +653,7 @@ function SourceStatusCard(props: ContextSourceCard) {
           onClick={onAction}
           variant="outline"
           size="sm"
-          className="mt-3 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10"
+          className="mt-3 border-[#E8912D]/20 text-[#f6c978] hover:bg-[#E8912D]/10"
         >
           {actionLabel || "Configurer"}
         </Button>
@@ -769,8 +734,6 @@ export default function ClientsPage() {
   const [loadingClients, setLoadingClients] = useState(true);
   const [openingClientId, setOpeningClientId] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [intelligenceData, setIntelligenceData] = useState<Record<string, unknown> | null>(null);
-  const [intelligenceEnriching, setIntelligenceEnriching] = useState(false);
   const [strategiesLoading, setStrategiesLoading] = useState(false);
   const [runsLoading, setRunsLoading] = useState(false);
   const [assetsLoading, setAssetsLoading] = useState(false);
@@ -945,11 +908,6 @@ export default function ClientsPage() {
     setOpeningClientId(client.id);
     setView("detail");
     setDetailSection("overview");
-    setIntelligenceData(null);
-    fetch(`${API_BASE}/api/intelligence/client/${client.id}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.data) setIntelligenceData(d.data); })
-      .catch(() => null);
     setStrategyView(null);
     setSelectedClient(client);
     setContextStatus(null);
@@ -968,7 +926,7 @@ export default function ClientsPage() {
       fetch(`${API_BASE}/api/client-hub/clients/${client.id}`).then((response) =>
         response.ok ? response.json() : client,
       ),
-      fetch(`/api/workflow/strategies?clientName=${encodeURIComponent(client.name)}`, { credentials: "include" }).then((response) =>
+      fetch(`${API_BASE}/api/strategy/past/${encodeURIComponent(client.name)}`).then((response) =>
         response.ok ? response.json() : { strategies: [] },
       ),
       fetch(`/api/client-context/${client.id}`, {
@@ -1495,7 +1453,7 @@ export default function ClientsPage() {
       <div className="min-h-screen">
         <Nav />
         <main className="overflow-x-hidden mx-auto max-w-5xl px-4 py-4 md:py-8 md:px-6 md:py-10">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#111827] p-6 text-sm text-white/45">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-6 text-sm text-white/45">
             Verification des acces...
           </div>
         </main>
@@ -1508,9 +1466,9 @@ export default function ClientsPage() {
       <div className="min-h-screen">
         <Nav />
         <main className="overflow-x-hidden mx-auto max-w-5xl px-4 py-4 md:py-8 md:px-6 md:py-10">
-          <Card className="border-white/[0.06] bg-[#111827]">
+          <Card className="border-white/[0.06] bg-[#1a1a1f]">
             <CardContent className="pt-6">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
                 Admin only
               </div>
               <h1 className="mt-2 text-2xl font-bold text-white">Client context</h1>
@@ -1541,7 +1499,7 @@ export default function ClientsPage() {
           </Button>
 
           <div className="mb-6">
-            <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-400">
+            <div className="text-[11px] uppercase tracking-[0.22em] text-[#E8912D]">
               Strategie archivee
             </div>
             <h1 className="mt-2 text-2xl font-bold text-white">{selectedClient?.name}</h1>
@@ -1551,19 +1509,21 @@ export default function ClientsPage() {
           {Object.entries(parsedStrategy)
             .filter(([, value]) => value && value.length > 20)
             .map(([key, value]) => (
-              <Card key={key} className="mb-4 border-white/[0.06] bg-[#111827]">
+              <Card key={key} className="mb-4 border-white/[0.06] bg-[#1a1a1f]">
                 <CardContent className="pt-5">
-                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-400">
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#E8912D]">
                     {strategyTitles[key] || key}
                   </div>
-                  <div className="prose prose-invert prose-sm max-w-none text-white/65" dangerouslySetInnerHTML={{ __html: mdToHtml(value) }} />
+                  <div className="whitespace-pre-line text-sm leading-relaxed text-white/65">
+                    {value}
+                  </div>
                 </CardContent>
               </Card>
             ))}
 
           <Button
             onClick={() => void downloadArchivedStrategyDocx()}
-            className="bg-[#6366f1] text-white hover:bg-[#818cf8]"
+            className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
           >
             Telecharger DOCX
           </Button>
@@ -1571,31 +1531,6 @@ export default function ClientsPage() {
       </div>
     );
   }
-
-  const triggerEnrich = async (clientId: string) => {
-    setIntelligenceEnriching(true);
-    try {
-      await fetch(`${API_BASE}/api/intelligence/client/${clientId}/enrich`, { method: "POST" });
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        try {
-          const r = await fetch(`${API_BASE}/api/intelligence/client/${clientId}`);
-          const d = await r.json() as { status?: string; data?: Record<string, unknown> };
-          if (d?.data && d?.status !== "running" && d?.status !== "queued") {
-            setIntelligenceData(d.data);
-            clearInterval(poll);
-            setIntelligenceEnriching(false);
-          } else if (attempts >= 20) {
-            clearInterval(poll);
-            setIntelligenceEnriching(false);
-          }
-        } catch { /* ignore poll errors */ }
-      }, 3000);
-    } catch {
-      setIntelligenceEnriching(false);
-    }
-  };
 
   if (view === "detail" && selectedClient) {
     return (
@@ -1614,14 +1549,14 @@ export default function ClientsPage() {
             className="mb-5 border-white/[0.06] text-white/45"
           >
             <ArrowLeft className="mr-2 h-3.5 w-3.5" />
-            Retour à la liste
+            Retour a la liste
           </Button>
 
-          <section className="rounded-2xl border border-white/[0.06] bg-[linear-gradient(145deg,rgba(99,102,241,0.06),rgba(255,255,255,0.02))] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.3)] md:p-8">
+          <section className="rounded-[32px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.26)] md:p-8">
             <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusDot client={selectedClient} />
+                  <Badge className={statusColor(selectedClient)}>{statusLabel(selectedClient)}</Badge>
                   <Badge className={detailTone.badge}>{detailTone.label}</Badge>
                   {selectedClient.industry ? (
                     <Badge className="bg-white/[0.04] text-white/55">{selectedClient.industry}</Badge>
@@ -1642,7 +1577,7 @@ export default function ClientsPage() {
                       href={selectedClient.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-indigo-300 hover:text-white"
+                      className="inline-flex items-center gap-1 text-[#f6c978] hover:text-white"
                     >
                       <span>· {selectedClient.website.replace(/^https?:\/\//, "")}</span>
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -1674,10 +1609,10 @@ export default function ClientsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-indigo-500/15 bg-[#0d1117] p-5">
+              <div className="rounded-[28px] border border-white/[0.06] bg-black/20 p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-indigo-300">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[#f6c978]">
                       Workflow readiness
                     </div>
                     <div className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-white">
@@ -1739,8 +1674,8 @@ export default function ClientsPage() {
                     onClick={() => setDetailSection(section.key)}
                     className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                       detailSection === section.key
-                        ? "border-[#E8912D]/30 bg-indigo-500/12 text-indigo-300"
-                        : "border-white/[0.06] bg-white/[0.02] text-white/45 hover:bg-white/[0.04] hover:text-white/80"
+                        ? "border-[#E8912D]/30 bg-[#E8912D]/12 text-[#f6c978]"
+                        : "border-white/[0.06] bg-white/[0.02] text-white/45 hover:text-white"
                     }`}
                   >
                     {section.short}
@@ -1770,7 +1705,7 @@ export default function ClientsPage() {
                       "_self",
                     )
                   }
-                  className="bg-[#6366f1] text-white hover:bg-[#818cf8]"
+                  className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
                 >
                   Rapport
                 </Button>
@@ -1783,7 +1718,7 @@ export default function ClientsPage() {
                     )
                   }
                   variant="outline"
-                  className="border-indigo-500/25 text-indigo-300"
+                  className="border-[#E8912D]/25 text-[#f6c978]"
                 >
                   Strategie
                 </Button>
@@ -1815,7 +1750,7 @@ export default function ClientsPage() {
                   {
                     label: "Budget mensuel",
                     value: money(selectedClient.monthly_budget),
-                    tone: "text-indigo-300",
+                    tone: "text-[#f6c978]",
                   },
                   {
                     label: "Spend Meta",
@@ -1833,7 +1768,7 @@ export default function ClientsPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="card-hover rounded-xl border border-white/[0.06] bg-[#0d1117] p-4 transition-all duration-200 hover:border-indigo-500/20"
+                    className="card-hover rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-4 transition-all duration-200 hover:border-white/[0.15]"
                   >
                     <div className={`text-xl font-bold ${item.tone}`}>{item.value}</div>
                     <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/30">
@@ -1844,10 +1779,10 @@ export default function ClientsPage() {
               </div>
 
               <div className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <FolderKanban className="h-4 w-4 text-indigo-400" />
+                      <FolderKanban className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Memoire strategique</div>
                       <Badge className="bg-white/[0.04] text-white/45">{strategies.length}</Badge>
                     </div>
@@ -1872,7 +1807,7 @@ export default function ClientsPage() {
                               <div className="text-sm font-semibold text-white">
                                 v{strategy.version || 1} - {shortDate(strategy.created_at)}
                               </div>
-                              <Badge className="bg-indigo-500/10 text-indigo-300 text-[10px]">Voir →</Badge>
+                              <Badge className="bg-[#E8912D]/10 text-[#f6c978]">Voir</Badge>
                             </div>
                             {strategy.strategy_summary ? (
                               <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">
@@ -1891,7 +1826,7 @@ export default function ClientsPage() {
                 </Card>
 
                 <div className="space-y-4">
-                  <Card className="border-white/[0.06] bg-[#111827]">
+                  <Card className="border-white/[0.06] bg-[#1a1a1f]">
                     <CardContent className="pt-5">
                       <div className="text-sm font-semibold text-white">Context coverage</div>
                       <p className="mt-1 text-xs leading-5 text-white/35">
@@ -1907,7 +1842,7 @@ export default function ClientsPage() {
                           </div>
                         </div>
                         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-                          <div className="text-lg font-bold text-indigo-300">
+                          <div className="text-lg font-bold text-[#f6c978]">
                             {filledMemoryFields}/{memoryFieldCount}
                           </div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/30">
@@ -1926,10 +1861,10 @@ export default function ClientsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-white/[0.06] bg-[#111827]">
+                  <Card className="border-white/[0.06] bg-[#1a1a1f]">
                     <CardContent className="pt-5">
                       <div className="mb-4 flex items-center gap-2">
-                        <FileDown className="h-4 w-4 text-indigo-400" />
+                        <FileDown className="h-4 w-4 text-[#E8912D]" />
                         <div className="text-sm font-semibold text-white">Recent outputs</div>
                         <Badge className="bg-white/[0.04] text-white/45">{deliverableRuns.length}</Badge>
                       </div>
@@ -1954,10 +1889,10 @@ export default function ClientsPage() {
               </div>
 
               <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <ExternalLink className="h-4 w-4 text-indigo-400" />
+                      <ExternalLink className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Connectors</div>
                     </div>
                     <p className="mb-4 text-xs leading-5 text-white/35">
@@ -1972,7 +1907,7 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
                       <ShieldAlert className="h-4 w-4 text-red-300" />
@@ -2014,7 +1949,7 @@ export default function ClientsPage() {
 
           {detailSection === "sources" ? (
             <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-              <Card className="border-white/[0.06] bg-[#111827]">
+              <Card className="border-white/[0.06] bg-[#1a1a1f]">
                 <CardContent className="pt-5">
                   <div className="mb-2 text-sm font-semibold text-white">Source inputs</div>
                   <p className="mb-5 text-sm text-white/35">
@@ -2041,7 +1976,7 @@ export default function ClientsPage() {
                         key={item.title}
                         className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4"
                       >
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#f6c978]">
                           {item.title}
                         </div>
                         <p className="mt-2 text-xs leading-5 text-white/40">{item.body}</p>
@@ -2093,7 +2028,7 @@ export default function ClientsPage() {
                       }
                       rows={7}
                       placeholder="Résumé court, notes récentes, sensitivités, contexte clé..."
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-[#6366f1]"
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-[#E8912D]"
                     />
                   </div>
 
@@ -2113,7 +2048,7 @@ export default function ClientsPage() {
                     <Button
                       onClick={() => void saveClientContext()}
                       disabled={savingContext}
-                      className="bg-[#6366f1] text-white hover:bg-[#818cf8]"
+                      className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
                     >
                       {savingContext ? (
                         <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -2132,7 +2067,7 @@ export default function ClientsPage() {
               </Card>
 
               <div className="space-y-4">
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="text-sm font-semibold text-white">URLs</div>
                     <p className="mt-2 text-sm leading-6 text-white/35">
@@ -2146,7 +2081,7 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="text-sm font-semibold text-white">Fichiers</div>
                     <p className="mt-2 text-sm leading-6 text-white/35">
@@ -2158,7 +2093,7 @@ export default function ClientsPage() {
                       className="mt-4 rounded-2xl border border-dashed border-white/[0.10] bg-white/[0.02] p-4"
                     >
                       <div className="flex flex-col items-center justify-center gap-3 text-center">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-indigo-300">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[#f6c978]">
                           {uploadingAssets ? (
                             <LoaderCircle className="h-5 w-5 animate-spin" />
                           ) : (
@@ -2223,7 +2158,7 @@ export default function ClientsPage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-indigo-300" />
+                                  <FileText className="h-4 w-4 text-[#f6c978]" />
                                   <div className="truncate text-sm font-semibold text-white">
                                     {asset.fileName}
                                   </div>
@@ -2270,7 +2205,7 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="flex items-center gap-2">
                         <div className="text-sm font-semibold text-white">Prochains ajouts</div>
@@ -2296,7 +2231,7 @@ export default function ClientsPage() {
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-semibold text-white">{item.label}</span>
-                                  <CircleAlert className="h-3.5 w-3.5 text-indigo-300" />
+                                  <CircleAlert className="h-3.5 w-3.5 text-[#f6c978]" />
                                 </div>
                                 <div className="mt-1 text-xs leading-5 text-white/35">
                                   {item.description}
@@ -2306,7 +2241,7 @@ export default function ClientsPage() {
                                     onClick={item.onAction}
                                     variant="outline"
                                     size="sm"
-                                    className="mt-3 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10"
+                                    className="mt-3 border-[#E8912D]/20 text-[#f6c978] hover:bg-[#E8912D]/10"
                                   >
                                     {item.actionLabel || "Configurer"}
                                   </Button>
@@ -2332,7 +2267,7 @@ export default function ClientsPage() {
 
           {detailSection === "memory" ? (
             <div className="mt-6">
-              <Card className="border-white/[0.06] bg-[#111827]">
+              <Card className="border-white/[0.06] bg-[#1a1a1f]">
                 <CardContent className="pt-5">
                   <div className="mb-2 text-sm font-semibold text-white">Memoire client</div>
                   <p className="mb-5 text-sm text-white/35">
@@ -2367,7 +2302,7 @@ export default function ClientsPage() {
                                 }
                                 rows={field.rows ?? 3}
                                 placeholder={field.placeholder}
-                                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-[#6366f1]"
+                                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none transition focus:border-[#E8912D]"
                               />
                             </div>
                           ))}
@@ -2392,7 +2327,7 @@ export default function ClientsPage() {
                     <Button
                       onClick={() => void saveClientContext()}
                       disabled={savingContext}
-                      className="bg-[#6366f1] text-white hover:bg-[#818cf8]"
+                      className="bg-[#E8912D] text-[#17140f] hover:bg-[#f0a94b]"
                     >
                       {savingContext ? (
                         <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -2415,10 +2350,10 @@ export default function ClientsPage() {
           {detailSection === "history" ? (
             <>
               <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <FolderKanban className="h-4 w-4 text-indigo-400" />
+                      <FolderKanban className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Past strategies</div>
                       <Badge className="bg-white/[0.04] text-white/45">{strategies.length}</Badge>
                     </div>
@@ -2441,7 +2376,7 @@ export default function ClientsPage() {
                               <div className="text-sm font-semibold text-white">
                                 v{strategy.version || 1} - {shortDate(strategy.created_at)}
                               </div>
-                              <Badge className="bg-indigo-500/10 text-indigo-300 text-[10px]">Voir →</Badge>
+                              <Badge className="bg-[#E8912D]/10 text-[#f6c978]">Voir</Badge>
                             </div>
                             {strategy.strategy_summary ? (
                               <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">
@@ -2457,10 +2392,10 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <FileDown className="h-4 w-4 text-indigo-400" />
+                      <FileDown className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Saved deliverables</div>
                       <Badge className="bg-white/[0.04] text-white/45">{deliverableRuns.length}</Badge>
                     </div>
@@ -2485,10 +2420,10 @@ export default function ClientsPage() {
               </div>
 
               <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <NotebookPen className="h-4 w-4 text-indigo-400" />
+                      <NotebookPen className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Notes</div>
                     </div>
                     {selectedNotes.length > 0 ? (
@@ -2513,10 +2448,10 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-white/[0.06] bg-[#111827]">
+                <Card className="border-white/[0.06] bg-[#1a1a1f]">
                   <CardContent className="pt-5">
                     <div className="mb-4 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-indigo-400" />
+                      <MessageSquare className="h-4 w-4 text-[#E8912D]" />
                       <div className="text-sm font-semibold text-white">Activite recente</div>
                     </div>
                     {detailLoading ? (
@@ -2547,195 +2482,6 @@ export default function ClientsPage() {
               </div>
             </>
           ) : null}
-
-          {detailSection === "intelligence" ? (
-            <>
-              <div className="mt-6 flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-semibold text-white">🧠 Intelligence client</div>
-                  <div className="mt-1 text-xs text-white/40">
-                    {intelligenceData
-                      ? `Dernière mise à jour: ${new Date((intelligenceData as {enriched_at?: string}).enriched_at ?? "").toLocaleString("fr-CA")}`
-                      : "Aucune donnée — cliquez sur Actualiser pour enrichir ce profil."}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={intelligenceEnriching}
-                  onClick={() => selectedClient && void triggerEnrich(selectedClient.id)}
-                  className="flex items-center gap-2 rounded-full border border-[#E8912D]/30 bg-[#E8912D]/10 px-4 py-2 text-xs font-semibold text-[#f6c978] transition hover:bg-[#E8912D]/20 disabled:opacity-50"
-                >
-                  {intelligenceEnriching ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  )}
-                  {intelligenceEnriching ? "Enrichissement en cours…" : "🔄 Actualiser"}
-                </button>
-              </div>
-
-              {intelligenceData ? (
-                <>
-                  {(intelligenceData as {ai_summary?: string}).ai_summary ? (
-                    <Card className="mt-4 border-[#E8912D]/20 bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-[#E8912D]" />
-                          <div className="text-xs font-semibold uppercase tracking-widest text-[#E8912D]">Résumé IA — Claude Haiku</div>
-                        </div>
-                        <div className="text-sm leading-7 text-white/75 whitespace-pre-wrap">
-                          {(intelligenceData as {ai_summary: string}).ai_summary}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : null}
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {(intelligenceData as {website?: Record<string, unknown>}).website &&
-                     !(intelligenceData as {website?: {error?: string}}).website?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <Globe2 className="h-4 w-4 text-emerald-400" />
-                            <div className="text-sm font-semibold text-white">Site web</div>
-                          </div>
-                          <div className="text-xs text-white/55 leading-5">
-                            {String((intelligenceData as {website: {title?: string}}).website.title ?? "")}
-                          </div>
-                          {(intelligenceData as {website: {description?: string}}).website.description ? (
-                            <div className="mt-2 text-xs text-white/40 line-clamp-3 leading-5">
-                              {String((intelligenceData as {website: {description?: string}}).website.description ?? "")}
-                            </div>
-                          ) : null}
-                          {Array.isArray((intelligenceData as {website: {tech_stack?: string[]}}).website.tech_stack) ? (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {((intelligenceData as {website: {tech_stack: string[]}}).website.tech_stack).slice(0, 5).map((t: string) => (
-                                <Badge key={t} className="bg-white/[0.04] text-[10px] text-white/45">{t}</Badge>
-                              ))}
-                            </div>
-                          ) : null}
-                          {(intelligenceData as {website: {main_cta?: string}}).website.main_cta ? (
-                            <div className="mt-2 text-xs text-[#f6c978]">
-                              CTA: {String((intelligenceData as {website: {main_cta?: string}}).website.main_cta ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-
-                    {(intelligenceData as {instagram?: Record<string, unknown>}).instagram &&
-                     !(intelligenceData as {instagram?: {error?: string}}).instagram?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <span className="text-pink-400 text-base leading-none">📸</span>
-                            <div className="text-sm font-semibold text-white">Instagram</div>
-                            {(intelligenceData as {instagram: {handle?: string}}).instagram.handle ? (
-                              <Badge className="bg-pink-500/10 text-pink-300 text-[10px]">
-                                @{String((intelligenceData as {instagram: {handle?: string}}).instagram.handle ?? "")}
-                              </Badge>
-                            ) : null}
-                          </div>
-                          {(intelligenceData as {instagram: {followers?: number}}).instagram.followers != null ? (
-                            <div className="text-2xl font-bold text-white tracking-tight">
-                              {Number((intelligenceData as {instagram: {followers?: number}}).instagram.followers).toLocaleString("fr-CA")}
-                              <span className="ml-1 text-xs font-normal text-white/40">abonnés</span>
-                            </div>
-                          ) : null}
-                          {(intelligenceData as {instagram: {bio?: string}}).instagram.bio ? (
-                            <div className="mt-2 text-xs text-white/45 leading-5 line-clamp-3">
-                              {String((intelligenceData as {instagram: {bio?: string}}).instagram.bio ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-
-                    {(intelligenceData as {linkedin?: Record<string, unknown>}).linkedin &&
-                     !(intelligenceData as {linkedin?: {error?: string}}).linkedin?.error ? (
-                      <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                        <CardContent className="pt-5">
-                          <div className="mb-3 flex items-center gap-2">
-                            <span className="text-blue-400 text-base leading-none">💼</span>
-                            <div className="text-sm font-semibold text-white">LinkedIn</div>
-                          </div>
-                          <div className="text-xs font-medium text-white/65">
-                            {String((intelligenceData as {linkedin: {company_name?: string}}).linkedin.company_name ?? "")}
-                          </div>
-                          {(intelligenceData as {linkedin: {description?: string}}).linkedin.description ? (
-                            <div className="mt-2 text-xs text-white/40 line-clamp-3 leading-5">
-                              {String((intelligenceData as {linkedin: {description?: string}}).linkedin.description ?? "")}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-indigo-400" />
-                          <div className="text-sm font-semibold text-white">Mentions Slack</div>
-                          <Badge className="bg-white/[0.04] text-white/45">
-                            {((intelligenceData as {slack_mentions?: unknown[]}).slack_mentions ?? []).length}
-                          </Badge>
-                        </div>
-                        {((intelligenceData as {slack_mentions?: unknown[]}).slack_mentions ?? []).length === 0 ? (
-                          <div className="text-xs text-white/35">Aucune mention trouvée.</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {((intelligenceData as {slack_mentions: Array<{text?: string; username?: string; channel?: string}>}).slack_mentions).slice(0, 4).map((m, i) => (
-                              <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-                                <div className="text-[10px] text-white/30">#{m.channel} · {m.username}</div>
-                                <div className="mt-1 text-xs text-white/55 line-clamp-2 leading-5">{m.text}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border-white/[0.06] bg-[#1a1a1f]">
-                      <CardContent className="pt-5">
-                        <div className="mb-3 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-emerald-400" />
-                          <div className="text-sm font-semibold text-white">Docs Google Drive</div>
-                          <Badge className="bg-white/[0.04] text-white/45">
-                            {((intelligenceData as {gdrive_docs?: unknown[]}).gdrive_docs ?? []).length}
-                          </Badge>
-                        </div>
-                        {((intelligenceData as {gdrive_docs?: unknown[]}).gdrive_docs ?? []).length === 0 ? (
-                          <div className="text-xs text-white/35">Aucun document trouvé.</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {((intelligenceData as {gdrive_docs: Array<{name?: string; webViewLink?: string}>}).gdrive_docs).slice(0, 5).map((d, i) => (
-                              <div key={i} className="flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-                                <FileDown className="h-3.5 w-3.5 flex-shrink-0 text-white/30" />
-                                <div className="min-w-0 flex-1 truncate text-xs text-white/60">{d.name}</div>
-                                {d.webViewLink ? (
-                                  <a href={d.webViewLink} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="h-3 w-3 text-white/25 hover:text-white/60" />
-                                  </a>
-                                ) : null}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              ) : (
-                <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] py-12 text-center">
-                  <div className="text-3xl">🧠</div>
-                  <div className="text-sm font-semibold text-white">Aucune intelligence disponible</div>
-                  <div className="text-xs text-white/40">Cliquez sur "Actualiser" pour enrichir ce profil client.</div>
-                </div>
-              )}
-            </>
-          ) : null}
         </main>
       </div>
     );
@@ -2745,10 +2491,10 @@ export default function ClientsPage() {
     <div className="min-h-screen">
       <Nav />
       <main className="overflow-x-hidden mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-10">
-        <section className="rounded-2xl border border-white/[0.06] bg-[linear-gradient(145deg,rgba(99,102,241,0.06),rgba(255,255,255,0.02))] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.3)] md:p-8">
+        <section className="rounded-[32px] border border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.26)] md:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#E8912D]/20 bg-[#E8912D]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f6c978]">
                 <FolderOpen className="h-3.5 w-3.5" />
                 Dossiers clients
               </div>
@@ -2785,7 +2531,7 @@ export default function ClientsPage() {
                     onClick={() => setFilter(value)}
                     className={
                       filter === value
-                        ? "bg-[#6366f1] text-white"
+                        ? "bg-[#E8912D] text-[#17140f]"
                         : "border-white/[0.06] text-white/40"
                     }
                   >
@@ -2814,11 +2560,11 @@ export default function ClientsPage() {
             {[
               { label: "Clients actifs", value: stats.active.toString(), tone: "text-white" },
               { label: "Ad spend", value: money(stats.spend), tone: "text-green-300" },
-              { label: "MRR", value: money(stats.mrr), tone: "text-indigo-300" },
+              { label: "MRR", value: money(stats.mrr), tone: "text-[#f6c978]" },
               {
                 label: "Contextes à compléter",
                 value: listInsights.missingContext.toString(),
-                tone: "text-indigo-300",
+                tone: "text-[#f6c978]",
               },
               {
                 label: "Connecteurs manquants",
@@ -2833,7 +2579,7 @@ export default function ClientsPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-xl border border-white/[0.06] bg-[#0d1117] p-4"
+                className="rounded-2xl border border-white/[0.06] bg-black/20 p-4"
               >
                 <div className={`text-2xl font-semibold tracking-[-0.04em] ${item.tone}`}>
                   {item.value}
@@ -2848,11 +2594,11 @@ export default function ClientsPage() {
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {loadingClients ? (
-            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#111827] p-6 text-center text-sm text-white/35">
+            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
               Chargement des clients...
             </div>
           ) : filteredClients.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#111827] p-6 text-center text-sm text-white/35">
+            <div className="col-span-full rounded-2xl border border-white/[0.08] bg-[#1a1a1f] p-6 text-center text-sm text-white/35">
               Aucun client ne correspond aux filtres.
             </div>
           ) : (
@@ -2865,22 +2611,19 @@ export default function ClientsPage() {
                   key={client.id}
                   type="button"
                   onClick={() => void openClient(client)}
-                  className="card-hover group rounded-xl border border-white/[0.06] bg-[#111827] p-5 text-left shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition hover:border-indigo-500/25 hover:bg-[#131a2e]"
+                  className="group rounded-[28px] border border-white/[0.06] bg-[#15151a] p-5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.22)] transition hover:border-white/[0.14] hover:bg-[#19191f]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="text-base font-semibold text-white">{client.name}</div>
-                      {client.industry ? (
-                        <div className="mt-0.5 text-xs text-white/40">{client.industry}</div>
-                      ) : null}
-                      {client.retainer_monthly ? (
-                        <div className="mt-1 text-sm font-semibold text-indigo-300">{money(client.retainer_monthly)}<span className="text-xs font-normal text-white/35">/mo</span></div>
-                      ) : null}
+                      <div className="mt-1 text-sm text-white/34">
+                        {client.industry || "Niche non definie"}
+                      </div>
                     </div>
                     {openingClientId === client.id ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin text-indigo-400" />
+                      <LoaderCircle className="h-4 w-4 animate-spin text-[#E8912D]" />
                     ) : (
-                      <StatusDot client={client} />
+                      <Badge className={statusColor(client)}>{statusLabel(client)}</Badge>
                     )}
                   </div>
 
@@ -2926,7 +2669,7 @@ export default function ClientsPage() {
                       : "Bonne base déjà en place pour générer des livrables plus solides et poser moins de questions."}
                   </div>
 
-                  <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-indigo-400 transition group-hover:text-indigo-200">
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#f6c978] transition group-hover:text-white">
                     Ouvrir le dossier
                     <ExternalLink className="h-3.5 w-3.5" />
                   </div>

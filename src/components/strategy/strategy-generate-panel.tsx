@@ -102,9 +102,9 @@ export function StrategyGeneratePanel({
       <div className="space-y-4">
         {/* ── Loading overlay ── */}
         {generating && (
-          <div className="rounded-2xl border border-[#E8912D]/30 bg-[#1a1a2e]/80 p-8 text-center">
+          <div className="rounded-2xl border border-[#6366f1]/30 bg-[#1a1a2e]/80 p-8 text-center">
             {/* Spinner */}
-            <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#E8912D]/30 border-t-[#E8912D]" />
+            <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#6366f1]/30 border-t-[#6366f1]" />
 
             <h3 className="mb-2 text-xl font-bold text-white">
               Génération en cours...
@@ -112,7 +112,7 @@ export function StrategyGeneratePanel({
             <p className="mb-4 text-sm text-gray-400">
               Le moteur stratégique analyse le contexte et génère les 7 phases
             </p>
-            <p className="font-medium text-[#E8912D]">
+            <p className="font-medium text-indigo-400">
               Estimation : 30–60 secondes
             </p>
 
@@ -124,14 +124,14 @@ export function StrategyGeneratePanel({
                     className={
                       "h-3 w-3 rounded-full transition-all duration-500 " +
                       (i <= activePhaseIdx
-                        ? "scale-110 bg-[#E8912D] shadow-[0_0_8px_rgba(232,145,45,0.5)]"
+                        ? "scale-110 bg-[#6366f1] shadow-[0_0_8px_rgba(232,145,45,0.5)]"
                         : "bg-white/20")
                     }
                   />
                   <span
                     className={
                       "text-[10px] transition-colors duration-300 " +
-                      (i <= activePhaseIdx ? "text-[#E8912D]" : "text-gray-500")
+                      (i <= activePhaseIdx ? "text-indigo-400" : "text-gray-500")
                     }
                   >
                     {phase}
@@ -143,7 +143,7 @@ export function StrategyGeneratePanel({
             {/* Progress bar */}
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#E8912D] to-[#F0A84D] transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-gradient-to-r from-[#6366f1] to-[#F0A84D] transition-all duration-700 ease-out"
                 style={{ width: progressPct + "%" }}
               />
             </div>
@@ -155,7 +155,7 @@ export function StrategyGeneratePanel({
 
         {/* Generate button */}
         <Button
-          className="h-12 w-full rounded-2xl bg-gradient-to-r from-[#E8912D] to-[#f6c978] font-semibold text-[#17140f] hover:opacity-90"
+          className="h-12 w-full rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#a5b4fc] font-semibold text-[#17140f] hover:opacity-90"
           disabled={generating}
           onClick={onGenerate}
         >

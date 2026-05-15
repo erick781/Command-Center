@@ -63,7 +63,7 @@ export function StrategyRetrievedContextPanel({
                 <Badge className="border border-white/10 bg-white/[0.04] text-white/55">
                   {source.freshnessStatus}
                 </Badge>
-                <Badge className="border border-[#E8912D]/20 bg-[#E8912D]/10 text-[#f6c978]">
+                <Badge className="border border-[#6366f1]/20 bg-[#6366f1]/10 text-indigo-300">
                   {(source.confidenceScore * 100).toFixed(0)}% confidence
                 </Badge>
               </div>
