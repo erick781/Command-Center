@@ -23,9 +23,11 @@ export async function proxy(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Allow auth, APIs, legacy V1 routes, and public static assets.
+  // Allow public routes: login, auth callback (password reset), APIs, legacy V1, and static assets.
   if (
     pathname === '/login' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/v1/') ||
     pathname.startsWith('/_next/') ||
